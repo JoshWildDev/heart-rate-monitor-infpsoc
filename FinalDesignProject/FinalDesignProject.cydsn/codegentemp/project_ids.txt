@@ -1,6 +1,6 @@
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|9956dd27-f715-46dd-9791-799be6c3757c
-C:\Users\pspen\Documents\PSoC Creator\4.4\Downloads ( 4.4).cylib\Downloads ( 4.4).cyprj|3995ade1-37aa-4b3d-8fec-537116b5917f
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|2eaee8e5-95b8-4812-ab82-4b600adeb276
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|b626249f-0544-4aa8-bd2b-c81c3589c450
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|931407f2-46e2-42d0-8244-58ed4a8d6d76
-C:\Users\pspen\Documents\PSoC Creator\FinalDesignProject\FinalDesignProject.cydsn\FinalDesignProject.cyprj|04fa3729-64de-470f-9499-2cdb3e2a741b
+C:\Users\pspen\Desktop\Final Project EECE\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\FinalDesignProject.cyprj|68a1c04a-9148-4e1a-8dfa-fe3b2aee3c28
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|f64a9124-7233-4c35-9b5f-b18ee9ecccf1
+C:\Users\pspen\Documents\PSoC Creator\4.4\Downloads ( 4.4).cylib\Downloads ( 4.4).cyprj|146fd010-acc2-4eec-9c0e-6b0b2e15635f
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|1a9a6323-9216-4440-b0ff-3779b50b781e
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|5f6bf9d8-be39-42e2-ac8f-b8930be3423f
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|384e12b0-6a61-4e5d-bae6-52998eafa7c1
