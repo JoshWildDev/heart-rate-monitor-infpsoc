@@ -18,7 +18,6 @@ Write code to successfully measure, filter, and display heart rate.
 #include "project.h"
 #include "stdbool.h"
 #include "stdio.h"
-#include "device.h"
 
 volatile bool btn_pressed = false;
 volatile bool device_on = true;
