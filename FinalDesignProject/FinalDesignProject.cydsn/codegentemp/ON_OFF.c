@@ -1,6 +1,6 @@
 /*******************************************************************************
 * File Name: ON_OFF.c  
-* Version 1.70
+* Version 1.71
 *
 *  Description:
 *   API for controlling the state of an interrupt.
@@ -252,7 +252,7 @@ void ON_OFF_SetPriority(uint8 priority)
     uint32 priorityOffset = ((ON_OFF__INTC_NUMBER % 4u) * 8u) + 6u;
     
 	interruptState = CyEnterCriticalSection();
-    *ON_OFF_INTC_PRIOR = (*ON_OFF_INTC_PRIOR & (uint32)(~ON_OFF__INTC_PRIOR_MASK)) |
+    *ON_OFF_INTC_PRIOR = (*ON_OFF_INTC_PRIOR & (uint32)(~(uint32)ON_OFF__INTC_PRIOR_MASK)) |
                                     ((uint32)priority << priorityOffset);
 	CyExitCriticalSection(interruptState);
 }

@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 1
 
 
    1              		.syntax unified
@@ -58,7 +58,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
   28:Generated_Source\PSoC4/UART_SCBCLK.c **** * Summary:
   29:Generated_Source\PSoC4/UART_SCBCLK.c **** *  Starts the clock, aligned to the specified running clock.
   30:Generated_Source\PSoC4/UART_SCBCLK.c **** *
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 2
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 2
 
 
   31:Generated_Source\PSoC4/UART_SCBCLK.c **** * Parameters:
@@ -118,7 +118,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
   39 000a 1360     		str	r3, [r2]
   74:Generated_Source\PSoC4/UART_SCBCLK.c **** }
   40              		.loc 1 74 0
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 3
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 3
 
 
   41              		@ sp needed
@@ -178,7 +178,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  107:Generated_Source\PSoC4/UART_SCBCLK.c ****         ((uint32)UART_SCBCLK_CMD_DISABLE_MASK);
  108:Generated_Source\PSoC4/UART_SCBCLK.c **** 
  109:Generated_Source\PSoC4/UART_SCBCLK.c **** #else
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 4
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 4
 
 
  110:Generated_Source\PSoC4/UART_SCBCLK.c **** 
@@ -238,7 +238,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
   91              		@ link register save eliminated.
   92              	.LVL0:
  136:Generated_Source\PSoC4/UART_SCBCLK.c ****     uint32 maskVal;
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 5
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 5
 
 
  137:Generated_Source\PSoC4/UART_SCBCLK.c ****     uint32 regVal;
@@ -298,7 +298,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  162:Generated_Source\PSoC4/UART_SCBCLK.c **** * Function Name: UART_SCBCLK_GetDividerRegister
  163:Generated_Source\PSoC4/UART_SCBCLK.c **** ********************************************************************************
  164:Generated_Source\PSoC4/UART_SCBCLK.c **** *
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 6
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 6
 
 
  165:Generated_Source\PSoC4/UART_SCBCLK.c **** * Summary:
@@ -358,7 +358,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  192:Generated_Source\PSoC4/UART_SCBCLK.c **** *
  193:Generated_Source\PSoC4/UART_SCBCLK.c **** * Returns:
  194:Generated_Source\PSoC4/UART_SCBCLK.c **** *  Fractional Divide value of the clock
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 7
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 7
 
 
  195:Generated_Source\PSoC4/UART_SCBCLK.c **** *  0 if the fractional divider is not in use.
@@ -396,48 +396,48 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  168 0006 00000000 		.4byte	.Ldebug_abbrev0
  169 000a 04       		.byte	0x4
  170 000b 01       		.uleb128 0x1
- 171 000c A6010000 		.4byte	.LASF24
+ 171 000c 9C010000 		.4byte	.LASF24
  172 0010 0C       		.byte	0xc
- 173 0011 47020000 		.4byte	.LASF25
- 174 0015 BA000000 		.4byte	.LASF26
+ 173 0011 3D020000 		.4byte	.LASF25
+ 174 0015 1F000000 		.4byte	.LASF26
  175 0019 00000000 		.4byte	.Ldebug_ranges0+0
  176 001d 00000000 		.4byte	0
  177 0021 00000000 		.4byte	.Ldebug_line0
  178 0025 02       		.uleb128 0x2
  179 0026 01       		.byte	0x1
  180 0027 06       		.byte	0x6
- 181 0028 85020000 		.4byte	.LASF0
+ 181 0028 7B020000 		.4byte	.LASF0
  182 002c 02       		.uleb128 0x2
  183 002d 01       		.byte	0x1
  184 002e 08       		.byte	0x8
- 185 002f 25000000 		.4byte	.LASF1
+ 185 002f 8D000000 		.4byte	.LASF1
  186 0033 02       		.uleb128 0x2
  187 0034 02       		.byte	0x2
  188 0035 05       		.byte	0x5
- 189 0036 6C020000 		.4byte	.LASF2
+ 189 0036 62020000 		.4byte	.LASF2
  190 003a 02       		.uleb128 0x2
  191 003b 02       		.byte	0x2
  192 003c 07       		.byte	0x7
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 8
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 8
 
 
- 193 003d 57000000 		.4byte	.LASF3
+ 193 003d BF000000 		.4byte	.LASF3
  194 0041 02       		.uleb128 0x2
  195 0042 04       		.byte	0x4
  196 0043 05       		.byte	0x5
- 197 0044 7C020000 		.4byte	.LASF4
+ 197 0044 72020000 		.4byte	.LASF4
  198 0048 02       		.uleb128 0x2
  199 0049 04       		.byte	0x4
  200 004a 07       		.byte	0x7
- 201 004b 33000000 		.4byte	.LASF5
+ 201 004b 9B000000 		.4byte	.LASF5
  202 004f 02       		.uleb128 0x2
  203 0050 08       		.byte	0x8
  204 0051 05       		.byte	0x5
- 205 0052 34020000 		.4byte	.LASF6
+ 205 0052 2A020000 		.4byte	.LASF6
  206 0056 02       		.uleb128 0x2
  207 0057 08       		.byte	0x8
  208 0058 07       		.byte	0x7
- 209 0059 47010000 		.4byte	.LASF7
+ 209 0059 3D010000 		.4byte	.LASF7
  210 005d 03       		.uleb128 0x3
  211 005e 04       		.byte	0x4
  212 005f 05       		.byte	0x5
@@ -445,46 +445,46 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  214 0064 02       		.uleb128 0x2
  215 0065 04       		.byte	0x4
  216 0066 07       		.byte	0x7
- 217 0067 3A010000 		.4byte	.LASF8
+ 217 0067 30010000 		.4byte	.LASF8
  218 006b 04       		.uleb128 0x4
- 219 006c 76020000 		.4byte	.LASF9
+ 219 006c 6C020000 		.4byte	.LASF9
  220 0070 02       		.byte	0x2
  221 0071 FC01     		.2byte	0x1fc
  222 0073 2C000000 		.4byte	0x2c
  223 0077 04       		.uleb128 0x4
- 224 0078 2C010000 		.4byte	.LASF10
+ 224 0078 22010000 		.4byte	.LASF10
  225 007c 02       		.byte	0x2
  226 007d FD01     		.2byte	0x1fd
  227 007f 3A000000 		.4byte	0x3a
  228 0083 04       		.uleb128 0x4
- 229 0084 33010000 		.4byte	.LASF11
+ 229 0084 29010000 		.4byte	.LASF11
  230 0088 02       		.byte	0x2
  231 0089 FE01     		.2byte	0x1fe
  232 008b 48000000 		.4byte	0x48
  233 008f 02       		.uleb128 0x2
  234 0090 04       		.byte	0x4
  235 0091 04       		.byte	0x4
- 236 0092 1F000000 		.4byte	.LASF12
+ 236 0092 87000000 		.4byte	.LASF12
  237 0096 02       		.uleb128 0x2
  238 0097 08       		.byte	0x8
  239 0098 04       		.byte	0x4
- 240 0099 75000000 		.4byte	.LASF13
+ 240 0099 DD000000 		.4byte	.LASF13
  241 009d 02       		.uleb128 0x2
  242 009e 01       		.byte	0x1
  243 009f 08       		.byte	0x8
- 244 00a0 42020000 		.4byte	.LASF14
+ 244 00a0 38020000 		.4byte	.LASF14
  245 00a4 04       		.uleb128 0x4
  246 00a5 00000000 		.4byte	.LASF15
  247 00a9 02       		.byte	0x2
  248 00aa A802     		.2byte	0x2a8
  249 00ac B0000000 		.4byte	0xb0
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 9
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 9
 
 
  250 00b0 05       		.uleb128 0x5
  251 00b1 83000000 		.4byte	0x83
  252 00b5 06       		.uleb128 0x6
- 253 00b6 45000000 		.4byte	.LASF16
+ 253 00b6 AD000000 		.4byte	.LASF16
  254 00ba 01       		.byte	0x1
  255 00bb 46       		.byte	0x46
  256 00bc 00000000 		.4byte	.LFB0
@@ -500,7 +500,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  266 00d5 01       		.uleb128 0x1
  267 00d6 9C       		.byte	0x9c
  268 00d7 07       		.uleb128 0x7
- 269 00d8 7D010000 		.4byte	.LASF27
+ 269 00d8 73010000 		.4byte	.LASF27
  270 00dc 01       		.byte	0x1
  271 00dd 86       		.byte	0x86
  272 00de 00000000 		.4byte	.LFB2
@@ -509,14 +509,14 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  275 00e7 9C       		.byte	0x9c
  276 00e8 23010000 		.4byte	0x123
  277 00ec 08       		.uleb128 0x8
- 278 00ed 6A000000 		.4byte	.LASF18
+ 278 00ed D2000000 		.4byte	.LASF18
  279 00f1 01       		.byte	0x1
  280 00f2 86       		.byte	0x86
  281 00f3 77000000 		.4byte	0x77
  282 00f7 01       		.uleb128 0x1
  283 00f8 50       		.byte	0x50
  284 00f9 08       		.uleb128 0x8
- 285 00fa 83000000 		.4byte	.LASF19
+ 285 00fa EB000000 		.4byte	.LASF19
  286 00fe 01       		.byte	0x1
  287 00ff 86       		.byte	0x86
  288 0100 6B000000 		.4byte	0x6b
@@ -529,7 +529,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  295 010d 83000000 		.4byte	0x83
  296 0111 00000000 		.4byte	.LLST0
  297 0115 0A       		.uleb128 0xa
- 298 0116 7C000000 		.4byte	.LASF21
+ 298 0116 E4000000 		.4byte	.LASF21
  299 011a 01       		.byte	0x1
  300 011b 89       		.byte	0x89
  301 011c 83000000 		.4byte	0x83
@@ -537,8 +537,8 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  303 0121 53       		.byte	0x53
  304 0122 00       		.byte	0
  305 0123 0B       		.uleb128 0xb
- 306 0124 5E010000 		.4byte	.LASF22
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 10
+ 306 0124 54010000 		.4byte	.LASF22
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 10
 
 
  307 0128 01       		.byte	0x1
@@ -549,7 +549,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  312 0136 01       		.uleb128 0x1
  313 0137 9C       		.byte	0x9c
  314 0138 0B       		.uleb128 0xb
- 315 0139 91000000 		.4byte	.LASF23
+ 315 0139 F9000000 		.4byte	.LASF23
  316 013d 01       		.byte	0x1
  317 013e C6       		.byte	0xc6
  318 013f 6B000000 		.4byte	0x6b
@@ -598,7 +598,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  361 0023 3E       		.uleb128 0x3e
  362 0024 0B       		.uleb128 0xb
  363 0025 03       		.uleb128 0x3
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 11
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 11
 
 
  364 0026 08       		.uleb128 0x8
@@ -658,7 +658,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  418 005d 0B       		.uleb128 0xb
  419 005e 3B       		.uleb128 0x3b
  420 005f 0B       		.uleb128 0xb
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 12
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 12
 
 
  421 0060 27       		.uleb128 0x27
@@ -718,7 +718,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  475 0097 13       		.uleb128 0x13
  476 0098 02       		.uleb128 0x2
  477 0099 18       		.uleb128 0x18
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 13
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 13
 
 
  478 009a 00       		.byte	0
@@ -778,7 +778,7 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  532 0034 04000000 		.4byte	.LFE4-.LFB4
  533 0038 00000000 		.4byte	0
  534 003c 00000000 		.4byte	0
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 14
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 14
 
 
  535              		.section	.debug_ranges,"",%progbits
@@ -814,150 +814,145 @@ ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 1
  557      434C4B5F 
  557      53746F70 
  557      00
- 558              	.LASF12:
- 559 001f 666C6F61 		.ascii	"float\000"
- 559      7400
- 560              	.LASF1:
- 561 0025 756E7369 		.ascii	"unsigned char\000"
- 561      676E6564 
- 561      20636861 
- 561      7200
- 562              	.LASF5:
- 563 0033 6C6F6E67 		.ascii	"long unsigned int\000"
- 563      20756E73 
- 563      69676E65 
- 563      6420696E 
+ 558              	.LASF26:
+ 559 001f 433A5C55 		.ascii	"C:\\Users\\joshw\\Desktop\\EECE3015\\eece3015-heart"
+ 559      73657273 
+ 559      5C6A6F73 
+ 559      68775C44 
+ 559      65736B74 
+ 560 004d 2D726174 		.ascii	"-rate-monitor\\FinalDesignProject\\FinalDesignProje"
+ 560      652D6D6F 
+ 560      6E69746F 
+ 560      725C4669 
+ 560      6E616C44 
+ 561 007e 63742E63 		.ascii	"ct.cydsn\000"
+ 561      7964736E 
+ 561      00
+ 562              	.LASF12:
+ 563 0087 666C6F61 		.ascii	"float\000"
  563      7400
- 564              	.LASF16:
- 565 0045 55415254 		.ascii	"UART_SCBCLK_Start\000"
- 565      5F534342 
- 565      434C4B5F 
- 565      53746172 
- 565      7400
- 566              	.LASF3:
- 567 0057 73686F72 		.ascii	"short unsigned int\000"
- 567      7420756E 
- 567      7369676E 
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 15
+ 564              	.LASF1:
+ 565 008d 756E7369 		.ascii	"unsigned char\000"
+ 565      676E6564 
+ 565      20636861 
+ 565      7200
+ 566              	.LASF5:
+ 567 009b 6C6F6E67 		.ascii	"long unsigned int\000"
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 15
 
 
- 567      65642069 
- 567      6E7400
- 568              	.LASF18:
- 569 006a 636C6B44 		.ascii	"clkDivider\000"
- 569      69766964 
- 569      657200
- 570              	.LASF13:
- 571 0075 646F7562 		.ascii	"double\000"
- 571      6C6500
- 572              	.LASF21:
- 573 007c 72656756 		.ascii	"regVal\000"
- 573      616C00
- 574              	.LASF19:
- 575 0083 636C6B46 		.ascii	"clkFractional\000"
- 575      72616374 
- 575      696F6E61 
- 575      6C00
- 576              	.LASF23:
- 577 0091 55415254 		.ascii	"UART_SCBCLK_GetFractionalDividerRegister\000"
- 577      5F534342 
- 577      434C4B5F 
- 577      47657446 
- 577      72616374 
- 578              	.LASF26:
- 579 00ba 433A5C55 		.ascii	"C:\\Users\\pspen\\Desktop\\Final Project EECE\\eece"
- 579      73657273 
- 579      5C707370 
- 579      656E5C44 
- 579      65736B74 
- 580 00e8 33303135 		.ascii	"3015-heart-rate-monitor\\FinalDesignProject\\FinalD"
- 580      2D686561 
- 580      72742D72 
- 580      6174652D 
- 580      6D6F6E69 
- 581 0119 65736967 		.ascii	"esignProject.cydsn\000"
- 581      6E50726F 
- 581      6A656374 
- 581      2E637964 
- 581      736E00
+ 567      20756E73 
+ 567      69676E65 
+ 567      6420696E 
+ 567      7400
+ 568              	.LASF16:
+ 569 00ad 55415254 		.ascii	"UART_SCBCLK_Start\000"
+ 569      5F534342 
+ 569      434C4B5F 
+ 569      53746172 
+ 569      7400
+ 570              	.LASF3:
+ 571 00bf 73686F72 		.ascii	"short unsigned int\000"
+ 571      7420756E 
+ 571      7369676E 
+ 571      65642069 
+ 571      6E7400
+ 572              	.LASF18:
+ 573 00d2 636C6B44 		.ascii	"clkDivider\000"
+ 573      69766964 
+ 573      657200
+ 574              	.LASF13:
+ 575 00dd 646F7562 		.ascii	"double\000"
+ 575      6C6500
+ 576              	.LASF21:
+ 577 00e4 72656756 		.ascii	"regVal\000"
+ 577      616C00
+ 578              	.LASF19:
+ 579 00eb 636C6B46 		.ascii	"clkFractional\000"
+ 579      72616374 
+ 579      696F6E61 
+ 579      6C00
+ 580              	.LASF23:
+ 581 00f9 55415254 		.ascii	"UART_SCBCLK_GetFractionalDividerRegister\000"
+ 581      5F534342 
+ 581      434C4B5F 
+ 581      47657446 
+ 581      72616374 
  582              	.LASF10:
- 583 012c 75696E74 		.ascii	"uint16\000"
+ 583 0122 75696E74 		.ascii	"uint16\000"
  583      313600
  584              	.LASF11:
- 585 0133 75696E74 		.ascii	"uint32\000"
+ 585 0129 75696E74 		.ascii	"uint32\000"
  585      333200
  586              	.LASF8:
- 587 013a 756E7369 		.ascii	"unsigned int\000"
+ 587 0130 756E7369 		.ascii	"unsigned int\000"
  587      676E6564 
  587      20696E74 
  587      00
  588              	.LASF7:
- 589 0147 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 589 013d 6C6F6E67 		.ascii	"long long unsigned int\000"
  589      206C6F6E 
  589      6720756E 
  589      7369676E 
  589      65642069 
  590              	.LASF22:
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 16
-
-
- 591 015e 55415254 		.ascii	"UART_SCBCLK_GetDividerRegister\000"
+ 591 0154 55415254 		.ascii	"UART_SCBCLK_GetDividerRegister\000"
  591      5F534342 
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyWjh0j.s 			page 16
+
+
  591      434C4B5F 
  591      47657444 
  591      69766964 
  592              	.LASF27:
- 593 017d 55415254 		.ascii	"UART_SCBCLK_SetFractionalDividerRegister\000"
+ 593 0173 55415254 		.ascii	"UART_SCBCLK_SetFractionalDividerRegister\000"
  593      5F534342 
  593      434C4B5F 
  593      53657446 
  593      72616374 
  594              	.LASF24:
- 595 01a6 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 595 019c 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
  595      43313120 
  595      352E342E 
  595      31203230 
  595      31363036 
- 596 01d9 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m0 -mthumb -g -O"
+ 596 01cf 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m0 -mthumb -g -O"
  596      20726576 
  596      6973696F 
  596      6E203233 
  596      37373135 
- 597 020c 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 597 0202 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
  597      66756E63 
  597      74696F6E 
  597      2D736563 
  597      74696F6E 
  598              	.LASF6:
- 599 0234 6C6F6E67 		.ascii	"long long int\000"
+ 599 022a 6C6F6E67 		.ascii	"long long int\000"
  599      206C6F6E 
  599      6720696E 
  599      7400
  600              	.LASF14:
- 601 0242 63686172 		.ascii	"char\000"
+ 601 0238 63686172 		.ascii	"char\000"
  601      00
  602              	.LASF25:
- 603 0247 47656E65 		.ascii	"Generated_Source\\PSoC4\\UART_SCBCLK.c\000"
+ 603 023d 47656E65 		.ascii	"Generated_Source\\PSoC4\\UART_SCBCLK.c\000"
  603      72617465 
  603      645F536F 
  603      75726365 
  603      5C50536F 
  604              	.LASF2:
- 605 026c 73686F72 		.ascii	"short int\000"
+ 605 0262 73686F72 		.ascii	"short int\000"
  605      7420696E 
  605      7400
  606              	.LASF9:
- 607 0276 75696E74 		.ascii	"uint8\000"
+ 607 026c 75696E74 		.ascii	"uint8\000"
  607      3800
  608              	.LASF4:
- 609 027c 6C6F6E67 		.ascii	"long int\000"
+ 609 0272 6C6F6E67 		.ascii	"long int\000"
  609      20696E74 
  609      00
  610              	.LASF0:
- 611 0285 7369676E 		.ascii	"signed char\000"
+ 611 027b 7369676E 		.ascii	"signed char\000"
  611      65642063 
  611      68617200 
  612              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran
-ARM GAS  C:\Users\pspen\AppData\Local\Temp\ccEZSymg.s 			page 17
-
-

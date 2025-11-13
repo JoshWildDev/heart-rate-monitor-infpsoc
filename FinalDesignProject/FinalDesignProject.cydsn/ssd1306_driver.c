@@ -45,15 +45,140 @@
 #include "stdio.h"
 #include "malloc.h"
 
-#define TIMEOUT_TIME 10
-#define I2C_COMMAND_BYTE 0x00
-#define I2C_CONTROL_BYTE 0x40
+#define FONT_WIDTH 5
+#define FONT_HEIGHT 7
 
-#define SSD1306_WIDTH 128
-#define SSD1306_HEIGHT 32
+const uint8_t font[][5] = {
+    // '0' 48
+    {0x3E,0x51,0x49,0x45,0x3E},
+    // '1' 49
+    {0x00,0x42,0x7F,0x40,0x00},
+    // '2' 50
+    {0x42,0x61,0x51,0x49,0x46},
+    // '3' 51
+    {0x21,0x41,0x45,0x4B,0x31},
+    // '4' 52
+    {0x18,0x14,0x12,0x7F,0x10},
+    // '5' 53
+    {0x27,0x45,0x45,0x45,0x39},
+    // '6' 54
+    {0x3C,0x4A,0x49,0x49,0x30},
+    // '7' 55
+    {0x01,0x71,0x09,0x05,0x03},
+    // '8' 56
+    {0x36,0x49,0x49,0x49,0x36},
+    // '9' 57
+    {0x06,0x49,0x49,0x29,0x1E},
 
-uint8_t *buffer = NULL;  // Display buffer
-uint8_t contrast = 0;
+    // 'A' 65
+    {0x7E,0x11,0x11,0x11,0x7E},
+    // 'B' 66
+    {0x7F,0x49,0x49,0x49,0x36},
+    // 'C' 67
+    {0x3E,0x41,0x41,0x41,0x22},
+    // 'D' 68
+    {0x7F,0x41,0x41,0x22,0x1C},
+    // 'E' 69
+    {0x7F,0x49,0x49,0x49,0x41},
+    // 'F' 70
+    {0x7F,0x09,0x09,0x09,0x01},
+    // 'G' 71
+    {0x3E,0x41,0x49,0x49,0x7A},
+    // 'H' 72
+    {0x7F,0x08,0x08,0x08,0x7F},
+    // 'I' 73
+    {0x00,0x41,0x7F,0x41,0x00},
+    // 'J' 74
+    {0x20,0x40,0x41,0x3F,0x01},
+    // 'K' 75
+    {0x7F,0x08,0x14,0x22,0x41},
+    // 'L' 76
+    {0x7F,0x40,0x40,0x40,0x40},
+    // 'M' 77
+    {0x7F,0x02,0x0C,0x02,0x7F},
+    // 'N' 78
+    {0x7F,0x04,0x08,0x10,0x7F},
+    // 'O' 79
+    {0x3E,0x41,0x41,0x41,0x3E},
+    // 'P' 80
+    {0x7F,0x09,0x09,0x09,0x06},
+    // 'Q' 81
+    {0x3E,0x41,0x51,0x21,0x5E},
+    // 'R' 82
+    {0x7F,0x09,0x19,0x29,0x46},
+    // 'S' 83
+    {0x46,0x49,0x49,0x49,0x31},
+    // 'T' 84
+    {0x01,0x01,0x7F,0x01,0x01},
+    // 'U' 85
+    {0x3F,0x40,0x40,0x40,0x3F},
+    // 'V' 86
+    {0x1F,0x20,0x40,0x20,0x1F},
+    // 'W' 87
+    {0x7F,0x20,0x18,0x20,0x7F},
+    // 'X' 88
+    {0x63,0x14,0x08,0x14,0x63},
+    // 'Y' 89
+    {0x03,0x04,0x78,0x04,0x03},
+    // 'Z' 90
+    {0x61,0x51,0x49,0x45,0x43},
+
+    // 'a' 97
+    {0x20,0x54,0x54,0x54,0x78},
+    // 'b' 98
+    {0x7F,0x48,0x44,0x44,0x38},
+    // 'c' 99
+    {0x38,0x44,0x44,0x44,0x20},
+    // 'd' 100
+    {0x38,0x44,0x44,0x48,0x7F},
+    // 'e' 101
+    {0x38,0x54,0x54,0x54,0x18},
+    // 'f' 102
+    {0x08,0x7E,0x09,0x01,0x02},
+    // 'g' 103
+    {0x0C,0x52,0x52,0x52,0x3E},
+    // 'h' 104
+    {0x7F,0x08,0x04,0x04,0x78},
+    // 'i' 105
+    {0x00,0x44,0x7D,0x40,0x00},
+    // 'j' 106
+    {0x20,0x40,0x44,0x3D,0x00},
+    // 'k' 107
+    {0x7F,0x10,0x28,0x44,0x00},
+    // 'l' 108
+    {0x00,0x41,0x7F,0x40,0x00},
+    // 'm' 109
+    {0x7C,0x04,0x18,0x04,0x78},
+    // 'n' 110
+    {0x7C,0x08,0x04,0x04,0x78},
+    // 'o' 111
+    {0x38,0x44,0x44,0x44,0x38},
+    // 'p' 112
+    {0x7C,0x14,0x14,0x14,0x08},
+    // 'q' 113
+    {0x08,0x14,0x14,0x18,0x7C},
+    // 'r' 114
+    {0x7C,0x08,0x04,0x04,0x08},
+    // 's' 115
+    {0x48,0x54,0x54,0x54,0x20},
+    // 't' 116
+    {0x04,0x3F,0x44,0x40,0x20},
+    // 'u' 117
+    {0x3C,0x40,0x40,0x20,0x7C},
+    // 'v' 118
+    {0x1C,0x20,0x40,0x20,0x1C},
+    // 'w' 119
+    {0x3C,0x40,0x30,0x40,0x3C},
+    // 'x' 120
+    {0x44,0x28,0x10,0x28,0x44},
+    // 'y' 121
+    {0x0C,0x50,0x50,0x50,0x3C},
+    // 'z' 122
+    {0x44,0x64,0x54,0x4C,0x44},
+};
+
+uint8_t buffer[SSD1306_WIDTH * (SSD1306_HEIGHT / 8)];  // Display buffer
+uint8_t contrast = 0x8F;
 
 // SOME DEFINES AND STATIC VARIABLES USED INTERNALLY -----------------------
 
@@ -103,7 +228,7 @@ void SSD1306_SendCommandList(const uint8_t *cmds, uint8_t n) {
 */
 void SSD1306_SendData(const uint8_t *data, uint16_t len) {
     I2C_I2CMasterSendStart(OLED_I2C_ADDR, 0, TIMEOUT_TIME);
-    I2C_I2CMasterWriteByte(I2C_CONTROL_BYTE, TIMEOUT_TIME);
+    I2C_I2CMasterWriteByte(I2C_DATA_BYTE, TIMEOUT_TIME);
     for (uint16_t i = 0; i < len; i ++) {
         I2C_I2CMasterWriteByte(data[i], TIMEOUT_TIME);
     }
@@ -118,6 +243,7 @@ void SSD1306_SendData(const uint8_t *data, uint16_t len) {
             commands as needed by one's own application.
 */
 void clearDisplay(void) {
+    UART_UartPutString("Clearing Display\n\r");
   memset(buffer, 0, SSD1306_WIDTH * ((SSD1306_HEIGHT + 7) / 8));
 }
 
@@ -142,16 +268,15 @@ void dim(bool dim) {
             proceeding.
     @note   MUST call this function before any drawing or updates!
 */
-bool init(void) {
-    if (!buffer) {
-        buffer = (uint8_t *)malloc(SSD1306_WIDTH * (SSD1306_HEIGHT / 8));
-        if (!buffer) return false;
-    }
+bool init(void) {    
+    UART_UartPutString("Starting init\n\r");
 
     clearDisplay();
-
+    UART_UartPutString("Cleared Display\n\r");
+    
+    I2C_Start();
+    CyDelay(1000);
     I2C_I2CMasterClearStatus();
-    I2C_I2CInit();
     
     static const uint8_t init_cmds[] = {
         SSD1306_DISPLAYOFF,           // 0xAE
@@ -173,11 +298,9 @@ bool init(void) {
         SSD1306_DISPLAYON             // 0xAF
     };
     
-    I2C_I2CMasterSendStart(OLED_I2C_ADDR, 0, TIMEOUT_TIME);
-    I2C_I2CMasterWriteByte(I2C_CONTROL_BYTE, TIMEOUT_TIME);
-    SSD1306_SendCommandList(init_cmds, 26);
-    I2C_I2CMasterSendStop(TIMEOUT_TIME);
-
+    SSD1306_SendCommandList(init_cmds, sizeof(init_cmds));
+    UART_UartPutString("Sent Commands\n\r");
+    
     return true; // Success
 }
 
@@ -200,83 +323,20 @@ bool init(void) {
             commands as needed by one's own application.
 */
 void drawPixel(int16_t x, int16_t y, uint16_t color) {
-  if ((x >= 0) && (x < width()) && (y >= 0) && (y < height())) {
-    // Pixel is in-bounds. Rotate coordinates if needed.
-    switch (getRotation()) {
-    case 1:
-      ssd1306_swap(x, y);
-      x = WIDTH - x - 1;
-      break;
-    case 2:
-      x = WIDTH - x - 1;
-      y = HEIGHT - y - 1;
-      break;
-    case 3:
-      ssd1306_swap(x, y);
-      y = HEIGHT - y - 1;
-      break;
+    if ((x >= 0) && (x < SSD1306_WIDTH) && (y >= 0) && (y < SSD1306_HEIGHT)) {
+        // Pixel is in-bounds.    
+        switch (color) {
+            case SSD1306_WHITE:
+                buffer[x + (y / 8) * SSD1306_WIDTH] |= (1 << (y & 7));
+                break;
+            case SSD1306_BLACK:
+                buffer[x + (y / 8) * SSD1306_WIDTH] &= ~(1 << (y & 7));
+                break;
+            case SSD1306_INVERSE:
+                buffer[x + (y / 8) * SSD1306_WIDTH] ^= (1 << (y & 7));
+                break;
+        }
     }
-    switch (color) {
-    case SSD1306_WHITE:
-      buffer[x + (y / 8) * WIDTH] |= (1 << (y & 7));
-      break;
-    case SSD1306_BLACK:
-      buffer[x + (y / 8) * WIDTH] &= ~(1 << (y & 7));
-      break;
-    case SSD1306_INVERSE:
-      buffer[x + (y / 8) * WIDTH] ^= (1 << (y & 7));
-      break;
-    }
-  }
-}
-
-
-/*!
-    @brief  Draw a horizontal line. This is also invoked by the Adafruit_GFX
-            library in generating many higher-level graphics primitives.
-    @param  x
-            Leftmost column -- 0 at left to (screen width - 1) at right.
-    @param  y
-            Row of display -- 0 at top to (screen height -1) at bottom.
-    @param  w
-            Width of line, in pixels.
-    @param  color
-            Line color, one of: SSD1306_BLACK, SSD1306_WHITE or SSD1306_INVERSE.
-    @return None (void).
-    @note   Changes buffer contents only, no immediate effect on display.
-            Follow up with a call to display(), or with other graphics
-            commands as needed by one's own application.
-*/
-void drawFastHLine(int16_t x, int16_t y, int16_t w,
-                                     uint16_t color) {
-  bool bSwap = false;
-  switch (rotation) {
-  case 1:
-    // 90 degree rotation, swap x & y for rotation, then invert x
-    bSwap = true;
-    ssd1306_swap(x, y);
-    x = WIDTH - x - 1;
-    break;
-  case 2:
-    // 180 degree rotation, invert x and y, then shift y around for height.
-    x = WIDTH - x - 1;
-    y = HEIGHT - y - 1;
-    x -= (w - 1);
-    break;
-  case 3:
-    // 270 degree rotation, swap x & y for rotation,
-    // then invert y and adjust y for w (not to become h)
-    bSwap = true;
-    ssd1306_swap(x, y);
-    y = HEIGHT - y - 1;
-    y -= (w - 1);
-    break;
-  }
-
-  if (bSwap)
-    drawFastVLineInternal(x, y, w, color);
-  else
-    drawFastHLineInternal(x, y, w, color);
 }
 
 /*!
@@ -296,87 +356,39 @@ void drawFastHLine(int16_t x, int16_t y, int16_t w,
             Follow up with a call to display(), or with other graphics
             commands as needed by one's own application.
 */
-void drawFastHLineInternal(int16_t x, int16_t y, int16_t w,
-                                             uint16_t color) {
-
-  if ((y >= 0) && (y < HEIGHT)) { // Y coord in bounds?
+void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
+  if ((y >= 0) && (y < SSD1306_HEIGHT)) { // Y coord in bounds?
     if (x < 0) {                  // Clip left
       w += x;
       x = 0;
     }
-    if ((x + w) > WIDTH) { // Clip right
-      w = (WIDTH - x);
+    if ((x + w) > SSD1306_WIDTH) { // Clip right
+      w = (SSD1306_WIDTH - x);
     }
     if (w > 0) { // Proceed only if width is positive
-      uint8_t *pBuf = &buffer[(y / 8) * WIDTH + x], mask = 1 << (y & 7);
+      uint8_t *pBuf = &buffer[(y / 8) * SSD1306_WIDTH + x];
+      uint8_t mask = 1 << (y & 7);
+    
       switch (color) {
-      case SSD1306_WHITE:
-        while (w--) {
-          *pBuf++ |= mask;
-        };
-        break;
-      case SSD1306_BLACK:
-        mask = ~mask;
-        while (w--) {
-          *pBuf++ &= mask;
-        };
-        break;
-      case SSD1306_INVERSE:
-        while (w--) {
-          *pBuf++ ^= mask;
-        };
-        break;
+        case SSD1306_WHITE:
+            while (w--) {
+                *pBuf++ |= mask;
+            };
+            break;
+        case SSD1306_BLACK:
+            mask = ~mask;
+            while (w--) {
+                *pBuf++ &= mask;
+            };
+            break;
+        case SSD1306_INVERSE:
+            while (w--) {
+                *pBuf++ ^= mask;
+            };
+            break;
       }
     }
   }
-}
-
-/*!
-    @brief  Draw a vertical line. This is also invoked by the Adafruit_GFX
-            library in generating many higher-level graphics primitives.
-    @param  x
-            Column of display -- 0 at left to (screen width -1) at right.
-    @param  y
-            Topmost row -- 0 at top to (screen height - 1) at bottom.
-    @param  h
-            Height of line, in pixels.
-    @param  color
-            Line color, one of: SSD1306_BLACK, SSD1306_WHITE or SSD1306_INVERSE.
-    @return None (void).
-    @note   Changes buffer contents only, no immediate effect on display.
-            Follow up with a call to display(), or with other graphics
-            commands as needed by one's own application.
-*/
-void drawFastVLine(int16_t x, int16_t y, int16_t h,
-                                     uint16_t color) {
-  bool bSwap = false;
-  switch (rotation) {
-  case 1:
-    // 90 degree rotation, swap x & y for rotation,
-    // then invert x and adjust x for h (now to become w)
-    bSwap = true;
-    ssd1306_swap(x, y);
-    x = WIDTH - x - 1;
-    x -= (h - 1);
-    break;
-  case 2:
-    // 180 degree rotation, invert x and y, then shift y around for height.
-    x = WIDTH - x - 1;
-    y = HEIGHT - y - 1;
-    y -= (h - 1);
-    break;
-  case 3:
-    // 270 degree rotation, swap x & y for rotation, then invert y
-    bSwap = true;
-    ssd1306_swap(x, y);
-    y = HEIGHT - y - 1;
-    break;
-  }
-
-  if (bSwap)
-    drawFastHLineInternal(x, y, h, color);
-  else
-    drawFastVLineInternal(x, y, h, color);
 }
 
 /*!
@@ -395,22 +407,20 @@ void drawFastVLine(int16_t x, int16_t y, int16_t h,
             Follow up with a call to display(), or with other graphics
             commands as needed by one's own application.
 */
-void drawFastVLineInternal(int16_t x, int16_t __y,
-                                             int16_t __h, uint16_t color) {
-
-  if ((x >= 0) && (x < WIDTH)) { // X coord in bounds?
+void drawFastVLine(int16_t x, int16_t __y, int16_t __h, uint16_t color) {
+  if ((x >= 0) && (x < SSD1306_WIDTH)) { // X coord in bounds?
     if (__y < 0) {               // Clip top
       __h += __y;
       __y = 0;
     }
-    if ((__y + __h) > HEIGHT) { // Clip bottom
-      __h = (HEIGHT - __y);
+    if ((__y + __h) > SSD1306_HEIGHT) { // Clip bottom
+      __h = (SSD1306_HEIGHT - __y);
     }
     if (__h > 0) { // Proceed only if height is now positive
       // this display doesn't need ints for coordinates,
       // use local byte registers for faster juggling
       uint8_t y = __y, h = __h;
-      uint8_t *pBuf = &buffer[(y / 8) * WIDTH + x];
+      uint8_t *pBuf = &buffer[(y / 8) * SSD1306_WIDTH + x];
 
       // do the first partial byte, if necessary - this requires some masking
       uint8_t mod = (y & 7);
@@ -420,25 +430,25 @@ void drawFastVLineInternal(int16_t x, int16_t __y,
         // note - lookup table results in a nearly 10% performance
         // improvement in fill* functions
         // uint8_t mask = ~(0xFF >> mod);
-        static const uint8_t PROGMEM premask[8] = {0x00, 0x80, 0xC0, 0xE0,
-                                                   0xF0, 0xF8, 0xFC, 0xFE};
-        uint8_t mask = pgm_read_byte(&premask[mod]);
+        static const uint8_t premask[8] = {0x00, 0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE};
+        uint8_t mask = premask[mod];
+        
         // adjust the mask if we're not going to reach the end of this byte
         if (h < mod)
           mask &= (0XFF >> (mod - h));
 
         switch (color) {
-        case SSD1306_WHITE:
-          *pBuf |= mask;
-          break;
-        case SSD1306_BLACK:
-          *pBuf &= ~mask;
-          break;
-        case SSD1306_INVERSE:
-          *pBuf ^= mask;
-          break;
+            case SSD1306_WHITE:
+                *pBuf |= mask;
+                break;
+            case SSD1306_BLACK:
+                *pBuf &= ~mask;
+                break;
+            case SSD1306_INVERSE:
+                *pBuf ^= mask;
+                break;
         }
-        pBuf += WIDTH;
+        pBuf += SSD1306_WIDTH;
       }
 
       if (h >= mod) { // More to go?
@@ -450,7 +460,7 @@ void drawFastVLineInternal(int16_t x, int16_t __y,
             // black/white write version with an extra comparison per loop
             do {
               *pBuf ^= 0xFF; // Invert byte
-              pBuf += WIDTH; // Advance pointer 8 rows
+              pBuf += SSD1306_WIDTH; // Advance pointer 8 rows
               h -= 8;        // Subtract 8 rows from height
             } while (h >= 8);
           } else {
@@ -458,7 +468,7 @@ void drawFastVLineInternal(int16_t x, int16_t __y,
             uint8_t val = (color != SSD1306_BLACK) ? 255 : 0;
             do {
               *pBuf = val;   // Set byte
-              pBuf += WIDTH; // Advance pointer 8 rows
+              pBuf += SSD1306_WIDTH; // Advance pointer 8 rows
               h -= 8;        // Subtract 8 rows from height
             } while (h >= 8);
           }
@@ -471,19 +481,18 @@ void drawFastVLineInternal(int16_t x, int16_t __y,
           // uint8_t mask = (1 << mod) - 1;
           // note - lookup table results in a nearly 10% performance
           // improvement in fill* functions
-          static const uint8_t PROGMEM postmask[8] = {0x00, 0x01, 0x03, 0x07,
-                                                      0x0F, 0x1F, 0x3F, 0x7F};
-          uint8_t mask = pgm_read_byte(&postmask[mod]);
+          static const uint8_t postmask[8] = {0x00, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F};
+          uint8_t mask = postmask[mod];
           switch (color) {
-          case SSD1306_WHITE:
-            *pBuf |= mask;
-            break;
-          case SSD1306_BLACK:
-            *pBuf &= ~mask;
-            break;
-          case SSD1306_INVERSE:
-            *pBuf ^= mask;
-            break;
+            case SSD1306_WHITE:
+                *pBuf |= mask;
+                break;
+            case SSD1306_BLACK:
+                *pBuf &= ~mask;
+                break;
+            case SSD1306_INVERSE:
+                *pBuf ^= mask;
+                break;
           }
         }
       }
@@ -503,25 +512,34 @@ void drawFastVLineInternal(int16_t x, int16_t __y,
             screen if display() has not been called.
 */
 bool getPixel(int16_t x, int16_t y) {
-  if ((x >= 0) && (x < width()) && (y >= 0) && (y < height())) {
-    // Pixel is in-bounds. Rotate coordinates if needed.
-    switch (getRotation()) {
-    case 1:
-      ssd1306_swap(x, y);
-      x = WIDTH - x - 1;
-      break;
-    case 2:
-      x = WIDTH - x - 1;
-      y = HEIGHT - y - 1;
-      break;
-    case 3:
-      ssd1306_swap(x, y);
-      y = HEIGHT - y - 1;
-      break;
+    if ((x >= 0) && (x < SSD1306_WIDTH) && (y >= 0) && (y < SSD1306_HEIGHT)) {
+        return (buffer[x + (y / 8) * SSD1306_WIDTH] & (1 << (y & 7)));
     }
-    return (buffer[x + (y / 8) * WIDTH] & (1 << (y & 7)));
-  }
-  return false; // Pixel out of bounds
+    return false; // Pixel out of bounds
+}
+
+void drawChar(int16_t x, int16_t y, char c, uint16_t color) {
+    if (c < 32 || c > 127) return;
+    const uint8_t *bitmap = font[c - 32];
+    
+    for (uint8_t i = 0; i < FONT_WIDTH; i ++) {
+        uint8_t col = bitmap[i];
+        for (uint8_t j = 0; j < FONT_HEIGHT; j ++) {
+            if (col & (1 << j)) {
+                drawPixel(x + i, y + j, color);
+            } else {
+                drawPixel(x + i, y + j, SSD1306_BLACK);
+            }
+        }
+    }
+}
+
+void drawString(int16_t x, int16_t y, const char *str, uint16_t color) {
+    while (*str) {
+        drawChar(x, y, *str, color);
+        x += FONT_WIDTH + 1;
+        str ++;
+    }
 }
 
 /*!
@@ -529,7 +547,7 @@ bool getPixel(int16_t x, int16_t y) {
     @return Pointer to an unsigned 8-bit array, column-major, columns padded
             to full byte boundary if needed.
 */
-uint8_t getBuffer(void) { return buffer; }
+uint8_t* getBuffer(void) { return buffer; }
 
 // REFRESH DISPLAY ---------------------------------------------------------
 
@@ -540,116 +558,35 @@ uint8_t getBuffer(void) { return buffer; }
             called. Call after each graphics command, or after a whole set
             of graphics commands, as best needed by one's own application.
 */
-void display(void) {
-  TRANSACTION_START
-  static const uint8_t PROGMEM dlist1[] = {
-      SSD1306_PAGEADDR,
-      0,                   // Page start address
-      0xFF,                // Page end (not really, but works here)
-      SSD1306_COLUMNADDR}; // Column start address
-  ssd1306_commandList(dlist1, sizeof(dlist1));
-
-  if (WIDTH == 64) {
-    ssd1306_command1(0x20);             // Column start
-    ssd1306_command1(0x20 + WIDTH - 1); // Column end address
-  } else {
-    ssd1306_command1(0);           // Column start
-    ssd1306_command1((WIDTH - 1)); // Column end address
-  }
-
-#if defined(ESP8266)
-  // ESP8266 needs a periodic yield() call to avoid watchdog reset.
-  // With the limited size of SSD1306 displays, and the fast bitrate
-  // being used (1 MHz or more), I think one yield() immediately before
-  // a screen write and one immediately after should cover it.  But if
-  // not, if this becomes a problem, yields() might be added in the
-  // 32-byte transfer condition below.
-  yield();
-#endif
-  uint16_t count = WIDTH * ((HEIGHT + 7) / 8);
-  uint8_t *ptr = buffer;
-  if (wire) { // I2C
-    wire->beginTransmission(i2caddr);
-    WIRE_WRITE((uint8_t)0x40);
-    uint16_t bytesOut = 1;
-    while (count--) {
-      if (bytesOut >= WIRE_MAX) {
-        wire->endTransmission();
-        wire->beginTransmission(i2caddr);
-        WIRE_WRITE((uint8_t)0x40);
-        bytesOut = 1;
-      }
-      WIRE_WRITE(*ptr++);
-      bytesOut++;
+void refreshDisplay(void) {
+    static const uint8_t dlist1[] = {
+        SSD1306_PAGEADDR,
+        0,                   // Page start address
+        0xFF,                // Page end (not really, but works here)
+        SSD1306_COLUMNADDR,
+        0,
+        SSD1306_WIDTH - 1
+    }; // Column start address
+    
+    SSD1306_SendCommandList(dlist1, sizeof(dlist1));
+    
+    uint16_t count = SSD1306_WIDTH * ((SSD1306_HEIGHT + 7) / 8);
+    uint8_t *ptr = buffer;
+    
+    while (count > 0) {
+        uint16_t chunk = (count > I2C_CHUNK_SIZE) ? I2C_CHUNK_SIZE : count;
+        
+        I2C_I2CMasterSendStart(OLED_I2C_ADDR, 0, TIMEOUT_TIME);
+        I2C_I2CMasterWriteByte(I2C_DATA_BYTE, TIMEOUT_TIME);
+        
+        for (uint16_t i = 0; i < chunk; i ++) {
+            I2C_I2CMasterWriteByte(*ptr++, TIMEOUT_TIME);
+        }
+        
+        I2C_I2CMasterSendStop(TIMEOUT_TIME);
+        count -= chunk;
     }
-    wire->endTransmission();
-  } else { // SPI
-    SSD1306_MODE_DATA
-    while (count--)
-      SPIwrite(*ptr++);
-  }
-  TRANSACTION_END
-#if defined(ESP8266)
-  yield();
-#endif
-}
 
-// SCROLLING FUNCTIONS -----------------------------------------------------
-
-/*!
-    @brief  Activate a right-handed scroll for all or part of the display.
-    @param  start
-            First row.
-    @param  stop
-            Last row.
-    @return None (void).
-*/
-// To scroll the whole display, run: display.startscrollright(0x00, 0x0F)
-void startscrollright(uint8_t start, uint8_t stop) {
-  TRANSACTION_START
-  static const uint8_t PROGMEM scrollList1a[] = {
-      SSD1306_RIGHT_HORIZONTAL_SCROLL, 0X00};
-  ssd1306_commandList(scrollList1a, sizeof(scrollList1a));
-  ssd1306_command1(start);
-  ssd1306_command1(0X00);
-  ssd1306_command1(stop);
-  static const uint8_t PROGMEM scrollList1b[] = {0X00, 0XFF,
-                                                 SSD1306_ACTIVATE_SCROLL};
-  ssd1306_commandList(scrollList1b, sizeof(scrollList1b));
-  TRANSACTION_END
-}
-
-/*!
-    @brief  Activate a left-handed scroll for all or part of the display.
-    @param  start
-            First row.
-    @param  stop
-            Last row.
-    @return None (void).
-*/
-// To scroll the whole display, run: display.startscrollleft(0x00, 0x0F)
-void startscrollleft(uint8_t start, uint8_t stop) {
-  TRANSACTION_START
-  static const uint8_t PROGMEM scrollList2a[] = {SSD1306_LEFT_HORIZONTAL_SCROLL,
-                                                 0X00};
-  ssd1306_commandList(scrollList2a, sizeof(scrollList2a));
-  ssd1306_command1(start);
-  ssd1306_command1(0X00);
-  ssd1306_command1(stop);
-  static const uint8_t PROGMEM scrollList2b[] = {0X00, 0XFF,
-                                                 SSD1306_ACTIVATE_SCROLL};
-  ssd1306_commandList(scrollList2b, sizeof(scrollList2b));
-  TRANSACTION_END
-}
-
-/*!
-    @brief  Cease a previously-begun scrolling action.
-    @return None (void).
-*/
-void stopscroll(void) {
-  TRANSACTION_START
-  ssd1306_command1(SSD1306_DEACTIVATE_SCROLL);
-  TRANSACTION_END
 }
 
 /* [] END OF FILE */

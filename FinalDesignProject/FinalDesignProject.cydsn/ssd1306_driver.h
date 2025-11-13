@@ -26,9 +26,18 @@
 */
 
 #include "project.h"
+#include "stdbool.h"
 
 #ifndef _Adafruit_SSD1306_H_
 #define _Adafruit_SSD1306_H_
+    
+#define TIMEOUT_TIME 10
+#define I2C_COMMAND_BYTE 0x00
+#define I2C_DATA_BYTE 0x40
+#define I2C_CHUNK_SIZE 16
+
+#define SSD1306_WIDTH 128
+#define SSD1306_HEIGHT 32
 
 /// base commands
 #define OLED_I2C_ADDR 0x3C
@@ -78,9 +87,22 @@
 #define SSD1306_SWITCHCAPVCC 0x02 ///< Gen. display voltage from 3.3V
 
 /// Function Definitions
-void SSD1306_Init(void);
-void SSD1306_Clear(void);
-void SSD1306_DisplayText(const char *text); 
+void SSD1306_SendCommand(uint8_t cmd);
+void SSD1306_SendCommandList(const uint8_t *cmds, uint8_t n);
+void SSD1306_SendData(const uint8_t *data, uint16_t len);
+void clearDisplay(void);
+void dim(bool dim);
+bool init(void);
+void drawPixel(int16_t x, int16_t y, uint16_t color);
+void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
+void drawFastVLine(int16_t x, int16_t __y, int16_t __h, uint16_t color);
+bool getPixel(int16_t x, int16_t y);
+uint8_t* getBuffer(void);
+void refreshDisplay(void);
+void drawChar(int16_t x, int16_t y, char c, uint16_t color);
+void drawString(int16_t x, int16_t y, const char *str, uint16_t color);
+
+
     
 #endif // _Adafruit_SSD1306_H_
 

@@ -11,11 +11,15 @@
   <Data key="DataVersionKey" value="2" />
   <Group key="DWRInstGuidMapping">
     <Group key="Pin">
+      <Data key="0a92a072-ed05-4997-80c8-5d26272f0d84" value="LED2" />
       <Data key="3dbba19d-7851-4a83-b204-a0a386fe8d68/5382e105-1382-4a2e-b9f4-3bb2feba71e0" value="I2C_sda" />
       <Data key="3dbba19d-7851-4a83-b204-a0a386fe8d68/22863ebe-a37b-476f-b252-6e49a8c00b12" value="I2C_scl" />
       <Data key="8d318d8b-cf7b-4b6b-b02c-ab1c5c49d0ba" value="PWR_BTN" />
       <Data key="43ec2fa1-bf22-4b71-9477-b6ca7b97f0b0/23b8206d-1c77-4e61-be4a-b4037d5de5fc" value="UART_tx" />
       <Data key="43ec2fa1-bf22-4b71-9477-b6ca7b97f0b0/78e33e5d-45ea-4b75-88d5-73274e8a7ce4" value="UART_rx" />
+      <Data key="d606fd61-bb94-4b92-856a-ed8766aa22ba" value="LED2" />
+      <Data key="e851a3b9-efb8-48be-bbb8-b303b216c393" value="LED1" />
+      <Data key="e2637df6-9fc2-4ef8-ab7a-d8dad31252a7" value="LED2" />
     </Group>
   </Group>
   <Group key="FlashSecurity">
@@ -1225,6 +1229,11 @@
     </Group>
   </Group>
   <Group key="Pin2">
+    <Group key="0a92a072-ed05-4997-80c8-5d26272f0d84">
+      <Group key="0">
+        <Data key="Port Format" value="1,6" />
+      </Group>
+    </Group>
     <Group key="3dbba19d-7851-4a83-b204-a0a386fe8d68/5382e105-1382-4a2e-b9f4-3bb2feba71e0">
       <Group key="0">
         <Data key="Port Format" value="4,1" />
@@ -1248,6 +1257,21 @@
     <Group key="43ec2fa1-bf22-4b71-9477-b6ca7b97f0b0/78e33e5d-45ea-4b75-88d5-73274e8a7ce4">
       <Group key="0">
         <Data key="Port Format" value="0,4" />
+      </Group>
+    </Group>
+    <Group key="d606fd61-bb94-4b92-856a-ed8766aa22ba">
+      <Group key="0">
+        <Data key="Port Format" value="1,6" />
+      </Group>
+    </Group>
+    <Group key="e851a3b9-efb8-48be-bbb8-b303b216c393">
+      <Group key="0">
+        <Data key="Port Format" value="0,2" />
+      </Group>
+    </Group>
+    <Group key="e2637df6-9fc2-4ef8-ab7a-d8dad31252a7">
+      <Group key="0">
+        <Data key="Port Format" value="1,6" />
       </Group>
     </Group>
   </Group>

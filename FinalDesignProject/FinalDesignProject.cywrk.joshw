@@ -13,11 +13,12 @@
 <v>Output</v>
 </TreeKeys>
 <TreeStates>
-<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="FinalDesignProject\FinalDesignProject\Source Files\ssd1306_driver.c">
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\cy_boot">
 <ExpandedNodeIds>
 <v>FinalDesignProject</v>
 <v>FinalDesignProject\FinalDesignProject</v>
 <v>FinalDesignProject\FinalDesignProject\TopDesign</v>
+<v>FinalDesignProject\FinalDesignProject\FinalDesignProject.cydwr</v>
 <v>FinalDesignProject\FinalDesignProject\FinalDesignProject.cydwr\Pins</v>
 <v>FinalDesignProject\FinalDesignProject\FinalDesignProject.cydwr\Analog</v>
 <v>FinalDesignProject\FinalDesignProject\FinalDesignProject.cydwr\Clocks</v>
@@ -33,14 +34,8 @@
 <v>FinalDesignProject\FinalDesignProject\Source Files\ssd1306_driver.c</v>
 <v>FinalDesignProject\FinalDesignProject\Generated_Source</v>
 <v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C</v>
 </ExpandedNodeIds>
 <VisibleNodeIds>
-<v>FinalDesignProject</v>
-<v>FinalDesignProject\FinalDesignProject</v>
-<v>FinalDesignProject\FinalDesignProject\TopDesign</v>
-<v>FinalDesignProject\FinalDesignProject\FinalDesignProject.cydwr</v>
-<v>FinalDesignProject\FinalDesignProject\Header Files</v>
 <v>FinalDesignProject\FinalDesignProject\Header Files\cyapicallbacks.h</v>
 <v>FinalDesignProject\FinalDesignProject\Header Files\ssd1306_driver.h</v>
 <v>FinalDesignProject\FinalDesignProject\Source Files</v>
@@ -52,25 +47,30 @@
 <v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\cy_lfclk</v>
 <v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\Em_EEPROM_Dynamic</v>
 <v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C.c</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C.h</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C_BOOT.c</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C_BOOT.h</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C_I2C.c</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C_I2C.h</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C_I2C_BOOT.c</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C_I2C_INT.c</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C_I2C_MASTER.c</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C_I2C_PVT.h</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C_PINS.h</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C_PM.c</v>
-<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C\I2C_PVT.h</v>
 <v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C_SCB_IRQ</v>
 <v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C_SCBCLK</v>
 <v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C_scl</v>
 <v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\I2C_sda</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\LED_PWM</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\LED_PWM_Clock</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\LED1</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\LED2</v>
 <v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\ON_OFF</v>
 <v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\PWR_BTN</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\UART</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\UART_rx</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\UART_SCBCLK</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\UART_tx</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\cycodeshareexport.ld</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\cycodeshareimport.ld</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\cycodeshareimport.scat</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\cydevice_trm.h</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\cydevicegnu_trm.inc</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\cydeviceiar_trm.inc</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\cydevicerv_trm.inc</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\cydisabledsheets.h</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\cyfitter.h</v>
+<v>FinalDesignProject\FinalDesignProject\Generated_Source\PSoC4\cyfitter_cfg.c</v>
 </VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 <CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
@@ -118,10 +118,18 @@
 <v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_scl_PM.lst</v>
 <v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_sda.lst</v>
 <v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_sda_PM.lst</v>
+<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\LED_PWM.lst</v>
+<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\LED_PWM_Clock.lst</v>
+<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\LED_PWM_PM.lst</v>
+<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\LED1.lst</v>
+<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\LED1_PM.lst</v>
+<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\LED2.lst</v>
+<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\LED2_PM.lst</v>
 <v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\main.lst</v>
 <v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\ON_OFF.lst</v>
 <v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\PWR_BTN.lst</v>
 <v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\PWR_BTN_PM.lst</v>
+<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\ssd1306_driver.lst</v>
 <v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\UART.lst</v>
 <v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\UART_BOOT.lst</v>
 <v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\UART_PM.lst</v>
@@ -144,39 +152,6 @@
 <VisibleNodeIds>
 <v>FinalDesignProject</v>
 <v>FinalDesignProject\FinalDesignProject</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\Cm0Start.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\cy_em_eeprom.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\CyBootAsmGnu.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\cyfitter_cfg.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\CyFlash.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\CyLFClk.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\CyLib.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\cymetadata.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\cyPm.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\cyutils.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_BOOT.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_I2C.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_I2C_BOOT.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_I2C_INT.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_I2C_MASTER.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_PM.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_SCB_IRQ.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_SCBCLK.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_scl.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_scl_PM.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_sda.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\I2C_sda_PM.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\main.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\ON_OFF.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\PWR_BTN.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\PWR_BTN_PM.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\UART.lst</v>
-<v>FinalDesignProject\FinalDesignProject\CortexM0\ARM_GCC_541\Debug\Listing Files\UART_BOOT.lst</v>
 </VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStates>
@@ -191,6 +166,15 @@
 <v>FinalDesignProject\FinalDesignProject\PSoC 4 Architecture TRM</v>
 <v>FinalDesignProject\FinalDesignProject\PSoC 4200 Family Datasheet</v>
 <v>FinalDesignProject\FinalDesignProject\System Reference Guides</v>
+<v>FinalDesignProject\FinalDesignProject\System Reference Guides\cy_boot_v6_10</v>
+<v>FinalDesignProject\FinalDesignProject\System Reference Guides\cy_lfclk_v1_20</v>
+<v>FinalDesignProject\FinalDesignProject\cy_clock_v2_20.pdf</v>
+<v>FinalDesignProject\FinalDesignProject\cy_isr_v1_71.pdf</v>
+<v>FinalDesignProject\FinalDesignProject\cy_pins_v2_20</v>
+<v>FinalDesignProject\FinalDesignProject\cy_pins_v2_20\cy_pins_v2_20.pdf</v>
+<v>FinalDesignProject\FinalDesignProject\SCB_P4_v4_0</v>
+<v>FinalDesignProject\FinalDesignProject\SCB_P4_v4_0\SCB_P4_v4_0.pdf</v>
+<v>FinalDesignProject\FinalDesignProject\TCPWM_P4_v2_10.pdf</v>
 </ExpandedNodeIds>
 <VisibleNodeIds>
 <v>FinalDesignProject</v>
@@ -198,6 +182,15 @@
 <v>FinalDesignProject\FinalDesignProject\PSoC 4 Architecture TRM</v>
 <v>FinalDesignProject\FinalDesignProject\PSoC 4200 Family Datasheet</v>
 <v>FinalDesignProject\FinalDesignProject\System Reference Guides</v>
+<v>FinalDesignProject\FinalDesignProject\System Reference Guides\cy_boot_v6_10</v>
+<v>FinalDesignProject\FinalDesignProject\System Reference Guides\cy_lfclk_v1_20</v>
+<v>FinalDesignProject\FinalDesignProject\cy_clock_v2_20.pdf</v>
+<v>FinalDesignProject\FinalDesignProject\cy_isr_v1_71.pdf</v>
+<v>FinalDesignProject\FinalDesignProject\cy_pins_v2_20</v>
+<v>FinalDesignProject\FinalDesignProject\cy_pins_v2_20\cy_pins_v2_20.pdf</v>
+<v>FinalDesignProject\FinalDesignProject\SCB_P4_v4_0</v>
+<v>FinalDesignProject\FinalDesignProject\SCB_P4_v4_0\SCB_P4_v4_0.pdf</v>
+<v>FinalDesignProject\FinalDesignProject\TCPWM_P4_v2_10.pdf</v>
 </VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStatesV2>
@@ -215,7 +208,8 @@
 <name v=".\FinalDesignProject.cydsn\main.c" />
 <name v=".\FinalDesignProject.cydsn\ssd1306_driver.c" />
 <name v=".\FinalDesignProject.cydsn\ssd1306_driver.h" />
-<name v=".\FinalDesignProject.cydsn\Generated_Source\PSoC4\I2C_I2C_MASTER.c" />
+<name v=".\FinalDesignProject.cydsn\TopDesign\TopDesign.cysch" />
+<name v=".\FinalDesignProject.cydsn\FinalDesignProject.cydwr" />
 </OpenDocs>
 <OpenDocsLayout><![CDATA[<?xml version="1.0"?><!--
 
@@ -223,7 +217,7 @@
   Copyright (c) 2001-2016 Actipro Software LLC.  All rights reserved.
   http://www.actiprosoftware.com
 
---><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal"><TabbedMdiContainer Size="742, 682" SelectedTabbedMdiWindow="3b7b0e5f-011a-4673-ad99-2da5ac97c19b"><DocumentWindow Key="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\main.c" Guid="226a3b5f-9e97-45ee-ac15-5bd7470564ab" /><DocumentWindow Key="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\ssd1306_driver.c" Guid="3b7b0e5f-011a-4673-ad99-2da5ac97c19b" /><DocumentWindow Key="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\ssd1306_driver.h" Guid="1bc71e82-e61a-433a-8e29-042d09206081" /><DocumentWindow Key="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\Generated_Source\PSoC4\I2C_I2C_MASTER.c" Guid="a5f50af7-4b5c-454a-b9bb-5e56ccfdb4cf" /><ToolWindow Key="Start Page:bd4649ab-da6b-4d04-a663-c722b8bf99db:Start Page" Guid="3e84f73c-4e73-4c12-b278-f6a3d9125c97" /></TabbedMdiContainer></TabbedMdiRootContainer><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
+--><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal"><TabbedMdiContainer Size="1513, 487" SelectedTabbedMdiWindow="226a3b5f-9e97-45ee-ac15-5bd7470564ab"><DocumentWindow Key="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\main.c" Guid="226a3b5f-9e97-45ee-ac15-5bd7470564ab" /><DocumentWindow Key="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\ssd1306_driver.c" Guid="3b7b0e5f-011a-4673-ad99-2da5ac97c19b" /><DocumentWindow Key="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\ssd1306_driver.h" Guid="1bc71e82-e61a-433a-8e29-042d09206081" /><DocumentWindow Key="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\TopDesign\TopDesign.cysch" Guid="a785a0c6-b6f8-4aa4-a2be-3e1a88c6cc7a" /><DocumentWindow Key="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\FinalDesignProject.cydwr" Guid="714c3519-ae18-4874-af01-16f5f55b2334" /></TabbedMdiContainer></TabbedMdiRootContainer><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
 <config v="" />
 <AutoUpdate v="true" />
 </CyGuid_843a90a4-0c4b-4e44-991d-05e7fb117a21>
