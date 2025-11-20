@@ -49,132 +49,181 @@
 #define FONT_HEIGHT 7
 
 const uint8_t font[][5] = {
-    // '0' 48
+    // '0' 48 - Index 0
     {0x3E,0x51,0x49,0x45,0x3E},
-    // '1' 49
+    // '1' 49 - Index 1
     {0x00,0x42,0x7F,0x40,0x00},
-    // '2' 50
+    // '2' 50 - Index 2
     {0x42,0x61,0x51,0x49,0x46},
-    // '3' 51
+    // '3' 51 - Index 3
     {0x21,0x41,0x45,0x4B,0x31},
-    // '4' 52
+    // '4' 52 - Index 4
     {0x18,0x14,0x12,0x7F,0x10},
-    // '5' 53
+    // '5' 53 - Index 5
     {0x27,0x45,0x45,0x45,0x39},
-    // '6' 54
+    // '6' 54 - Index 6
     {0x3C,0x4A,0x49,0x49,0x30},
-    // '7' 55
+    // '7' 55 - Index 7
     {0x01,0x71,0x09,0x05,0x03},
-    // '8' 56
+    // '8' 56 - Index 8
     {0x36,0x49,0x49,0x49,0x36},
-    // '9' 57
+    // '9' 57 - Index 9
     {0x06,0x49,0x49,0x29,0x1E},
 
-    // 'A' 65
+    // 'A' 65 - Index 10
     {0x7E,0x11,0x11,0x11,0x7E},
-    // 'B' 66
+    // 'B' 66 - Index 11
     {0x7F,0x49,0x49,0x49,0x36},
-    // 'C' 67
+    // 'C' 67 - Index 12
     {0x3E,0x41,0x41,0x41,0x22},
-    // 'D' 68
+    // 'D' 68 - Index 13
     {0x7F,0x41,0x41,0x22,0x1C},
-    // 'E' 69
+    // 'E' 69 - Index 14
     {0x7F,0x49,0x49,0x49,0x41},
-    // 'F' 70
+    // 'F' 70 - Index 15
     {0x7F,0x09,0x09,0x09,0x01},
-    // 'G' 71
+    // 'G' 71 - Index 16
     {0x3E,0x41,0x49,0x49,0x7A},
-    // 'H' 72
+    // 'H' 72 - Index 17
     {0x7F,0x08,0x08,0x08,0x7F},
-    // 'I' 73
+    // 'I' 73 - Index 18
     {0x00,0x41,0x7F,0x41,0x00},
-    // 'J' 74
+    // 'J' 74 - Index 19
     {0x20,0x40,0x41,0x3F,0x01},
-    // 'K' 75
+    // 'K' 75 - Index 20
     {0x7F,0x08,0x14,0x22,0x41},
-    // 'L' 76
+    // 'L' 76 - Index 21
     {0x7F,0x40,0x40,0x40,0x40},
-    // 'M' 77
+    // 'M' 77 - Index 22
     {0x7F,0x02,0x0C,0x02,0x7F},
-    // 'N' 78
+    // 'N' 78 - Index 23
     {0x7F,0x04,0x08,0x10,0x7F},
-    // 'O' 79
+    // 'O' 79 - Index 24
     {0x3E,0x41,0x41,0x41,0x3E},
-    // 'P' 80
+    // 'P' 80 - Index 25
     {0x7F,0x09,0x09,0x09,0x06},
-    // 'Q' 81
+    // 'Q' 81 - Index 26
     {0x3E,0x41,0x51,0x21,0x5E},
-    // 'R' 82
+    // 'R' 82 - Index 27
     {0x7F,0x09,0x19,0x29,0x46},
-    // 'S' 83
+    // 'S' 83 - Index 28
     {0x46,0x49,0x49,0x49,0x31},
-    // 'T' 84
+    // 'T' 84 - Index 29
     {0x01,0x01,0x7F,0x01,0x01},
-    // 'U' 85
+    // 'U' 85 - Index 30
     {0x3F,0x40,0x40,0x40,0x3F},
-    // 'V' 86
+    // 'V' 86 - Index 31
     {0x1F,0x20,0x40,0x20,0x1F},
-    // 'W' 87
+    // 'W' 87 - Index 32
     {0x7F,0x20,0x18,0x20,0x7F},
-    // 'X' 88
+    // 'X' 88 - Index 33
     {0x63,0x14,0x08,0x14,0x63},
-    // 'Y' 89
+    // 'Y' 89 - Index 34
     {0x03,0x04,0x78,0x04,0x03},
-    // 'Z' 90
+    // 'Z' 90 - Index 35
     {0x61,0x51,0x49,0x45,0x43},
 
-    // 'a' 97
+    // 'a' 97 - Index 36
     {0x20,0x54,0x54,0x54,0x78},
-    // 'b' 98
+    // 'b' 98 - Index 37
     {0x7F,0x48,0x44,0x44,0x38},
-    // 'c' 99
+    // 'c' 99 - Index 38
     {0x38,0x44,0x44,0x44,0x20},
-    // 'd' 100
+    // 'd' 100 - Index 39
     {0x38,0x44,0x44,0x48,0x7F},
-    // 'e' 101
+    // 'e' 101 - Index 40
     {0x38,0x54,0x54,0x54,0x18},
-    // 'f' 102
+    // 'f' 102 - Index 41
     {0x08,0x7E,0x09,0x01,0x02},
-    // 'g' 103
+    // 'g' 103 - Index 42
     {0x0C,0x52,0x52,0x52,0x3E},
-    // 'h' 104
+    // 'h' 104 - Index 43
     {0x7F,0x08,0x04,0x04,0x78},
-    // 'i' 105
+    // 'i' 105 - Index 44
     {0x00,0x44,0x7D,0x40,0x00},
-    // 'j' 106
+    // 'j' 106 - Index 45
     {0x20,0x40,0x44,0x3D,0x00},
-    // 'k' 107
+    // 'k' 107 - Index 46
     {0x7F,0x10,0x28,0x44,0x00},
-    // 'l' 108
+    // 'l' 108 - Index 47
     {0x00,0x41,0x7F,0x40,0x00},
-    // 'm' 109
+    // 'm' 109 - Index 48
     {0x7C,0x04,0x18,0x04,0x78},
-    // 'n' 110
+    // 'n' 110 - Index 49
     {0x7C,0x08,0x04,0x04,0x78},
-    // 'o' 111
+    // 'o' 111 - Index 50
     {0x38,0x44,0x44,0x44,0x38},
-    // 'p' 112
+    // 'p' 112 - Index 51
     {0x7C,0x14,0x14,0x14,0x08},
-    // 'q' 113
+    // 'q' 113 - Index 52
     {0x08,0x14,0x14,0x18,0x7C},
-    // 'r' 114
+    // 'r' 114 - Index 53
     {0x7C,0x08,0x04,0x04,0x08},
-    // 's' 115
+    // 's' 115 - Index 54
     {0x48,0x54,0x54,0x54,0x20},
-    // 't' 116
+    // 't' 116 - Index 55
     {0x04,0x3F,0x44,0x40,0x20},
-    // 'u' 117
+    // 'u' 117 - Index 56
     {0x3C,0x40,0x40,0x20,0x7C},
-    // 'v' 118
+    // 'v' 118 - Index 57
     {0x1C,0x20,0x40,0x20,0x1C},
-    // 'w' 119
+    // 'w' 119 - Index 58
     {0x3C,0x40,0x30,0x40,0x3C},
-    // 'x' 120
+    // 'x' 120 - Index 59
     {0x44,0x28,0x10,0x28,0x44},
-    // 'y' 121
+    // 'y' 121 - Index 60
     {0x0C,0x50,0x50,0x50,0x3C},
-    // 'z' 122
+    // 'z' 122 - Index 61
     {0x44,0x64,0x54,0x4C,0x44},
+
+    // ' ' (space) 32 - Index 62
+    {0x00,0x00,0x00,0x00,0x00},
+    // '!' 33 - Index 63
+    {0x00,0x00,0x5F,0x00,0x00},
+    // '.' 46 - Index 64
+    {0x00,0x60,0x60,0x00,0x00},
+    // ',' 44 - Index 65
+    {0x00,0x80,0x60,0x00,0x00},
+    // ':' 58 - Index 66
+    {0x00,0x36,0x36,0x00,0x00},
+    // ';' 59 - Index 67
+    {0x00,0x80,0x36,0x36,0x00},
+    // '?' 63 - Index 68
+    {0x02,0x01,0x51,0x09,0x06},
+    // '-' 45 - Index 69
+    {0x08,0x08,0x08,0x08,0x08},
+    // '_' 95 - Index 70
+    {0x80,0x80,0x80,0x80,0x80},
+    // '/' 47 - Index 71
+    {0x60,0x10,0x08,0x04,0x03},
+    // '+' 43 - Index 72
+    {0x08,0x08,0x3E,0x08,0x08},
+    // '=' 61 - Index 73
+    {0x14,0x14,0x14,0x14,0x14},
+    // '*' 42 - Index 74
+    {0x14,0x08,0x3E,0x08,0x14},
+    // '%' 37 - Index 75
+    {0x62,0x64,0x08,0x13,0x23},
+    // '(' 40 - Index 76
+    {0x00,0x1C,0x22,0x41,0x00},
+    // ')' 41 - Index 77
+    {0x00,0x41,0x22,0x1C,0x00},
+    // '[' 91 - Index 78
+    {0x00,0x7F,0x41,0x41,0x00},
+    // ']' 93 - Index 79
+    {0x00,0x41,0x41,0x7F,0x00},
+    // '"' 34 - Index 80
+    {0x03,0x00,0x03,0x00,0x00},
+    // '\'' 39 - Index 81
+    {0x00,0x03,0x00,0x00,0x00},
+    // '#' 35 - Index 82
+    {0x14,0x7F,0x14,0x7F,0x14},
+    // '$' 36 - Index 83
+    {0x24,0x2A,0x7F,0x2A,0x12},
+    // '&' 38 - Index 84
+    {0x36,0x49,0x55,0x22,0x50},
+    // '@' 64 - Index 85
+    {0x3E,0x41,0x5D,0x55,0x1E},
 };
 
 uint8_t buffer[SSD1306_WIDTH * (SSD1306_HEIGHT / 8)];  // Display buffer
@@ -519,12 +568,53 @@ bool getPixel(int16_t x, int16_t y) {
 }
 
 void drawChar(int16_t x, int16_t y, char c, uint16_t color) {
-    if (c < 32 || c > 127) return;
-    const uint8_t *bitmap = font[c - 32];
+    int font_index = -1;
     
-    for (uint8_t i = 0; i < FONT_WIDTH; i ++) {
+    // Map character to font array index
+    if (c >= '0' && c <= '9') {
+        font_index = c - '0';  // 0-9 (indices 0-9)
+    } else if (c >= 'A' && c <= 'Z') {
+        font_index = 10 + (c - 'A');  // A-Z (indices 10-35)
+    } else if (c >= 'a' && c <= 'z') {
+        font_index = 36 + (c - 'a');  // a-z (indices 36-61)
+    } else {
+        // Special characters
+        switch(c) {
+            case ' ':  font_index = 62; break;
+            case '!':  font_index = 63; break;
+            case '.':  font_index = 64; break;
+            case ',':  font_index = 65; break;
+            case ':':  font_index = 66; break;
+            case ';':  font_index = 67; break;
+            case '?':  font_index = 68; break;
+            case '-':  font_index = 69; break;
+            case '_':  font_index = 70; break;
+            case '/':  font_index = 71; break;
+            case '+':  font_index = 72; break;
+            case '=':  font_index = 73; break;
+            case '*':  font_index = 74; break;
+            case '%':  font_index = 75; break;
+            case '(':  font_index = 76; break;
+            case ')':  font_index = 77; break;
+            case '[':  font_index = 78; break;
+            case ']':  font_index = 79; break;
+            case '"':  font_index = 80; break;
+            case '\'': font_index = 81; break;
+            case '#':  font_index = 82; break;
+            case '$':  font_index = 83; break;
+            case '&':  font_index = 84; break;
+            case '@':  font_index = 85; break;
+            default:   return;  // Unsupported character
+        }
+    }
+    
+    if (font_index < 0) return;  // Invalid character
+    
+    const uint8_t *bitmap = font[font_index];
+    
+    for (uint8_t i = 0; i < FONT_WIDTH; i++) {
         uint8_t col = bitmap[i];
-        for (uint8_t j = 0; j < FONT_HEIGHT; j ++) {
+        for (uint8_t j = 0; j < FONT_HEIGHT; j++) {
             if (col & (1 << j)) {
                 drawPixel(x + i, y + j, color);
             } else {
@@ -538,7 +628,7 @@ void drawString(int16_t x, int16_t y, const char *str, uint16_t color) {
     while (*str) {
         drawChar(x, y, *str, color);
         x += FONT_WIDTH + 1;
-        str ++;
+        str++;
     }
 }
 

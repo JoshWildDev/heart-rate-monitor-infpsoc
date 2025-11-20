@@ -1,6 +1,6 @@
-C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\FinalDesignProject.cyprj|868373b9-187a-42d9-8619-2f3d545436b4
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|cef1aa87-7e87-464f-b802-0bb67039d58a
-C:\Users\joshw\Documents\PSoC Creator\4.4\Downloads ( 4.4).cylib\Downloads ( 4.4).cyprj|b0d9dacc-8b22-404f-afff-6b56435f3463
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|3cbe5b21-04ad-4caa-8f44-cf2e63c50cea
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|e5bdbbbb-2bd7-4364-b0c1-97034a0aadc6
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|76c756b4-161d-4bd9-b533-063aee581f34
+C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\FinalDesignProject.cyprj|876dcec7-f217-4e34-b6f4-1481dcc49aac
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|c9406f84-27e7-4f2b-83b4-7d099f588fa3
+C:\Users\joshw\Documents\PSoC Creator\4.4\Downloads ( 4.4).cylib\Downloads ( 4.4).cyprj|9f9cbdcc-7066-42e8-8685-a775f4de6e2c
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|47eb288a-ce59-4dbb-a5cb-3c587c3416d7
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|f797ab42-0aba-4538-961e-64fb6586503c
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|108de5ab-34ea-4e2d-99b3-856ffce9dc00
