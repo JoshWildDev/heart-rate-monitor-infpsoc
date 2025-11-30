@@ -39,9 +39,13 @@
           <File BuildType="BUILD" Toolchain="">main.c</File>
           <File BuildType="BUILD" Toolchain="">ssd1306_driver.c</File>
           <File BuildType="BUILD" Toolchain="">max30102_driver.c</File>
+          <File BuildType="BUILD" Toolchain="">heartrate.c</File>
+          <File BuildType="BUILD" Toolchain="">spo2_algorithm.c</File>
           <File BuildType="BUILD" Toolchain="">cyapicallbacks.h</File>
           <File BuildType="BUILD" Toolchain="">ssd1306_driver.h</File>
           <File BuildType="BUILD" Toolchain="">max30102_driver.h</File>
+          <File BuildType="BUILD" Toolchain="">spo2_algorithm.h</File>
+          <File BuildType="BUILD" Toolchain="">heartrate.h</File>
         </Files>
       </Folder>
       <Folder BuildType="STRICT" Path="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\Generated_Source\PSoC4">

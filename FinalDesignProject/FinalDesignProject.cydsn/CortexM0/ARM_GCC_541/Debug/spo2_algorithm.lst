@@ -1,0 +1,4313 @@
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m0
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 0
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"spo2_algorithm.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.section	.text.maxim_peaks_above_min_height,"ax",%progbits
+  20              		.align	2
+  21              		.global	maxim_peaks_above_min_height
+  22              		.code	16
+  23              		.thumb_func
+  24              		.type	maxim_peaks_above_min_height, %function
+  25              	maxim_peaks_above_min_height:
+  26              	.LFB34:
+  27              		.file 1 "spo2_algorithm.c"
+   1:spo2_algorithm.c **** /* ========================================
+   2:spo2_algorithm.c ****  *
+   3:spo2_algorithm.c ****  * Copyright YOUR COMPANY, THE YEAR
+   4:spo2_algorithm.c ****  * All Rights Reserved
+   5:spo2_algorithm.c ****  * UNPUBLISHED, LICENSED SOFTWARE.
+   6:spo2_algorithm.c ****  *
+   7:spo2_algorithm.c ****  * CONFIDENTIAL AND PROPRIETARY INFORMATION
+   8:spo2_algorithm.c ****  * WHICH IS THE PROPERTY OF your company.
+   9:spo2_algorithm.c ****  *
+  10:spo2_algorithm.c ****  * ========================================
+  11:spo2_algorithm.c **** */
+  12:spo2_algorithm.c **** 
+  13:spo2_algorithm.c **** #include "spo2_algorithm.h"
+  14:spo2_algorithm.c **** #include "project.h"
+  15:spo2_algorithm.c **** 
+  16:spo2_algorithm.c **** // MIN macro for PSoC
+  17:spo2_algorithm.c **** #define min(x,y) ((x) < (y) ? (x) : (y))
+  18:spo2_algorithm.c **** 
+  19:spo2_algorithm.c **** int32_t an_x[BUFFER_SIZE]; //ir
+  20:spo2_algorithm.c **** int32_t an_y[BUFFER_SIZE]; //red
+  21:spo2_algorithm.c **** 
+  22:spo2_algorithm.c **** const uint8_t uch_spo2_table[184] = { 
+  23:spo2_algorithm.c ****   95, 95, 95, 96, 96, 96, 97, 97, 97, 97, 97, 98, 98, 98, 98, 98, 99, 99, 99, 99, 
+  24:spo2_algorithm.c ****   99, 99, 99, 99, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 
+  25:spo2_algorithm.c ****   100, 100, 100, 100, 99, 99, 99, 99, 99, 99, 99, 99, 98, 98, 98, 98, 98, 98, 97, 97, 
+  26:spo2_algorithm.c ****   97, 97, 96, 96, 96, 96, 95, 95, 95, 94, 94, 94, 93, 93, 93, 92, 92, 92, 91, 91, 
+  27:spo2_algorithm.c ****   90, 90, 89, 89, 89, 88, 88, 87, 87, 86, 86, 85, 85, 84, 84, 83, 82, 82, 81, 81, 
+  28:spo2_algorithm.c ****   80, 80, 79, 78, 78, 77, 76, 76, 75, 74, 74, 73, 72, 72, 71, 70, 69, 69, 68, 67, 
+  29:spo2_algorithm.c ****   66, 66, 65, 64, 63, 62, 62, 61, 60, 59, 58, 57, 56, 56, 55, 54, 53, 52, 51, 50, 
+  30:spo2_algorithm.c ****   49, 48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 31, 30, 29, 
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 2
+
+
+  31:spo2_algorithm.c ****   28, 27, 26, 25, 23, 22, 21, 20, 19, 17, 16, 15, 14, 12, 11, 10, 9, 7, 6, 5, 
+  32:spo2_algorithm.c ****   3, 2, 1 
+  33:spo2_algorithm.c **** };
+  34:spo2_algorithm.c **** 
+  35:spo2_algorithm.c **** void maxim_heart_rate_and_oxygen_saturation(uint32_t *pun_ir_buffer, int32_t n_ir_buffer_length, ui
+  36:spo2_algorithm.c ****                 int32_t *pn_heart_rate, int8_t *pch_hr_valid)
+  37:spo2_algorithm.c **** /**
+  38:spo2_algorithm.c **** * \brief        Calculate the heart rate and SpO2 level
+  39:spo2_algorithm.c **** * \par          Details
+  40:spo2_algorithm.c **** *               By detecting peaks of PPG cycle and corresponding AC/DC of red/infra-red signal, th
+  41:spo2_algorithm.c **** *               Since this algorithm is aiming for Arm M0/M3, formula for SPO2 did not achieve the 
+  42:spo2_algorithm.c **** *               Thus, accurate SPO2 is precalculated and saved into uch_spo2_table[] per each ratio
+  43:spo2_algorithm.c **** *
+  44:spo2_algorithm.c **** * \param[in]    *pun_ir_buffer           - IR sensor data buffer
+  45:spo2_algorithm.c **** * \param[in]    n_ir_buffer_length       - IR sensor data buffer length
+  46:spo2_algorithm.c **** * \param[in]    *pun_red_buffer          - Red sensor data buffer
+  47:spo2_algorithm.c **** * \param[out]   *pn_spo2                 - Calculated SpO2 value
+  48:spo2_algorithm.c **** * \param[out]   *pch_spo2_valid          - 1 if the calculated SpO2 value is valid
+  49:spo2_algorithm.c **** * \param[out]   *pn_heart_rate           - Calculated heart rate value
+  50:spo2_algorithm.c **** * \param[out]   *pch_hr_valid            - 1 if the calculated heart rate value is valid
+  51:spo2_algorithm.c **** *
+  52:spo2_algorithm.c **** * \retval       None
+  53:spo2_algorithm.c **** */
+  54:spo2_algorithm.c **** {
+  55:spo2_algorithm.c ****   uint32_t un_ir_mean;
+  56:spo2_algorithm.c ****   int32_t k, n_i_ratio_count;
+  57:spo2_algorithm.c ****   int32_t i, n_exact_ir_valley_locs_count, n_middle_idx;
+  58:spo2_algorithm.c ****   int32_t n_th1, n_npks;   
+  59:spo2_algorithm.c ****   int32_t an_ir_valley_locs[15];
+  60:spo2_algorithm.c ****   int32_t n_peak_interval_sum;
+  61:spo2_algorithm.c ****   
+  62:spo2_algorithm.c ****   int32_t n_y_ac, n_x_ac;
+  63:spo2_algorithm.c ****   int32_t n_spo2_calc; 
+  64:spo2_algorithm.c ****   int32_t n_y_dc_max, n_x_dc_max; 
+  65:spo2_algorithm.c ****   int32_t n_y_dc_max_idx = 0;
+  66:spo2_algorithm.c ****   int32_t n_x_dc_max_idx = 0; 
+  67:spo2_algorithm.c ****   int32_t an_ratio[5], n_ratio_average; 
+  68:spo2_algorithm.c ****   int32_t n_nume, n_denom;
+  69:spo2_algorithm.c **** 
+  70:spo2_algorithm.c ****   // calculates DC mean and subtract DC from ir
+  71:spo2_algorithm.c ****   un_ir_mean = 0; 
+  72:spo2_algorithm.c ****   for (k = 0; k < n_ir_buffer_length; k++) 
+  73:spo2_algorithm.c ****     un_ir_mean += pun_ir_buffer[k];
+  74:spo2_algorithm.c ****   un_ir_mean = un_ir_mean / n_ir_buffer_length;
+  75:spo2_algorithm.c ****     
+  76:spo2_algorithm.c ****   // remove DC and invert signal so that we can use peak detector as valley detector
+  77:spo2_algorithm.c ****   for (k = 0; k < n_ir_buffer_length; k++)  
+  78:spo2_algorithm.c ****     an_x[k] = -1 * (pun_ir_buffer[k] - un_ir_mean); 
+  79:spo2_algorithm.c ****     
+  80:spo2_algorithm.c ****   // 4 pt Moving Average
+  81:spo2_algorithm.c ****   for(k = 0; k < BUFFER_SIZE - MA4_SIZE; k++){
+  82:spo2_algorithm.c ****     an_x[k] = (an_x[k] + an_x[k+1] + an_x[k+2] + an_x[k+3]) / (int)4;        
+  83:spo2_algorithm.c ****   }
+  84:spo2_algorithm.c ****   
+  85:spo2_algorithm.c ****   // calculate threshold  
+  86:spo2_algorithm.c ****   n_th1 = 0; 
+  87:spo2_algorithm.c ****   for (k = 0; k < BUFFER_SIZE; k++){
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 3
+
+
+  88:spo2_algorithm.c ****     n_th1 += an_x[k];
+  89:spo2_algorithm.c ****   }
+  90:spo2_algorithm.c ****   n_th1 = n_th1 / (BUFFER_SIZE);
+  91:spo2_algorithm.c ****   if(n_th1 < 30) n_th1 = 30; // min allowed
+  92:spo2_algorithm.c ****   if(n_th1 > 60) n_th1 = 60; // max allowed
+  93:spo2_algorithm.c **** 
+  94:spo2_algorithm.c ****   for (k = 0; k < 15; k++) an_ir_valley_locs[k] = 0;
+  95:spo2_algorithm.c ****   
+  96:spo2_algorithm.c ****   // since we flipped signal, we use peak detector as valley detector
+  97:spo2_algorithm.c ****   maxim_find_peaks(an_ir_valley_locs, &n_npks, an_x, BUFFER_SIZE, n_th1, 4, 15); //peak_height, pea
+  98:spo2_algorithm.c ****   
+  99:spo2_algorithm.c ****   n_peak_interval_sum = 0;
+ 100:spo2_algorithm.c ****   if (n_npks >= 2){
+ 101:spo2_algorithm.c ****     for (k = 1; k < n_npks; k++) 
+ 102:spo2_algorithm.c ****       n_peak_interval_sum += (an_ir_valley_locs[k] - an_ir_valley_locs[k-1]);
+ 103:spo2_algorithm.c ****     n_peak_interval_sum = n_peak_interval_sum / (n_npks - 1);
+ 104:spo2_algorithm.c ****     *pn_heart_rate = (int32_t)((FreqS * 60) / n_peak_interval_sum);
+ 105:spo2_algorithm.c ****     *pch_hr_valid = 1;
+ 106:spo2_algorithm.c ****   }
+ 107:spo2_algorithm.c ****   else { 
+ 108:spo2_algorithm.c ****     *pn_heart_rate = -999; // unable to calculate because # of peaks are too small
+ 109:spo2_algorithm.c ****     *pch_hr_valid = 0;
+ 110:spo2_algorithm.c ****   }
+ 111:spo2_algorithm.c **** 
+ 112:spo2_algorithm.c ****   // load raw value again for SPO2 calculation : RED(=y) and IR(=X)
+ 113:spo2_algorithm.c ****   for (k = 0; k < n_ir_buffer_length; k++) {
+ 114:spo2_algorithm.c ****     an_x[k] = pun_ir_buffer[k]; 
+ 115:spo2_algorithm.c ****     an_y[k] = pun_red_buffer[k]; 
+ 116:spo2_algorithm.c ****   }
+ 117:spo2_algorithm.c **** 
+ 118:spo2_algorithm.c ****   // find precise min near an_ir_valley_locs
+ 119:spo2_algorithm.c ****   n_exact_ir_valley_locs_count = n_npks; 
+ 120:spo2_algorithm.c ****   
+ 121:spo2_algorithm.c ****   // using exact_ir_valley_locs, find ir-red DC and ir-red AC for SPO2 calibration ratio
+ 122:spo2_algorithm.c ****   // finding AC/DC maximum of raw
+ 123:spo2_algorithm.c ****   n_ratio_average = 0; 
+ 124:spo2_algorithm.c ****   n_i_ratio_count = 0; 
+ 125:spo2_algorithm.c ****   for(k = 0; k < 5; k++) an_ratio[k] = 0;
+ 126:spo2_algorithm.c ****   
+ 127:spo2_algorithm.c ****   for (k = 0; k < n_exact_ir_valley_locs_count; k++){
+ 128:spo2_algorithm.c ****     if (an_ir_valley_locs[k] > BUFFER_SIZE){
+ 129:spo2_algorithm.c ****       *pn_spo2 = -999; // do not use SPO2 since valley loc is out of range
+ 130:spo2_algorithm.c ****       *pch_spo2_valid = 0; 
+ 131:spo2_algorithm.c ****       return;
+ 132:spo2_algorithm.c ****     }
+ 133:spo2_algorithm.c ****   }
+ 134:spo2_algorithm.c ****   
+ 135:spo2_algorithm.c ****   // find max between two valley locations 
+ 136:spo2_algorithm.c ****   // and use ratio between AC component of IR & Red and DC component of IR & Red for SPO2 
+ 137:spo2_algorithm.c ****   for (k = 0; k < n_exact_ir_valley_locs_count - 1; k++){
+ 138:spo2_algorithm.c ****     n_y_dc_max = -16777216; 
+ 139:spo2_algorithm.c ****     n_x_dc_max = -16777216; 
+ 140:spo2_algorithm.c ****     
+ 141:spo2_algorithm.c ****     if (an_ir_valley_locs[k+1] - an_ir_valley_locs[k] > 3){
+ 142:spo2_algorithm.c ****       for (i = an_ir_valley_locs[k]; i < an_ir_valley_locs[k+1]; i++){
+ 143:spo2_algorithm.c ****         if (an_x[i] > n_x_dc_max) {n_x_dc_max = an_x[i]; n_x_dc_max_idx = i;}
+ 144:spo2_algorithm.c ****         if (an_y[i] > n_y_dc_max) {n_y_dc_max = an_y[i]; n_y_dc_max_idx = i;}
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 4
+
+
+ 145:spo2_algorithm.c ****       }
+ 146:spo2_algorithm.c ****       
+ 147:spo2_algorithm.c ****       n_y_ac = (an_y[an_ir_valley_locs[k+1]] - an_y[an_ir_valley_locs[k]]) * (n_y_dc_max_idx - an_i
+ 148:spo2_algorithm.c ****       n_y_ac = an_y[an_ir_valley_locs[k]] + n_y_ac / (an_ir_valley_locs[k+1] - an_ir_valley_locs[k]
+ 149:spo2_algorithm.c ****       n_y_ac = an_y[n_y_dc_max_idx] - n_y_ac; // subtracting linear DC components from raw 
+ 150:spo2_algorithm.c ****       
+ 151:spo2_algorithm.c ****       n_x_ac = (an_x[an_ir_valley_locs[k+1]] - an_x[an_ir_valley_locs[k]]) * (n_x_dc_max_idx - an_i
+ 152:spo2_algorithm.c ****       n_x_ac = an_x[an_ir_valley_locs[k]] + n_x_ac / (an_ir_valley_locs[k+1] - an_ir_valley_locs[k]
+ 153:spo2_algorithm.c ****       n_x_ac = an_x[n_y_dc_max_idx] - n_x_ac; // subtracting linear DC components from raw 
+ 154:spo2_algorithm.c ****       
+ 155:spo2_algorithm.c ****       n_nume = (n_y_ac * n_x_dc_max) >> 7; //prepare X100 to preserve floating value
+ 156:spo2_algorithm.c ****       n_denom = (n_x_ac * n_y_dc_max) >> 7;
+ 157:spo2_algorithm.c ****       
+ 158:spo2_algorithm.c ****       if (n_denom > 0 && n_i_ratio_count < 5 && n_nume != 0)
+ 159:spo2_algorithm.c ****       {   
+ 160:spo2_algorithm.c ****         an_ratio[n_i_ratio_count] = (n_nume * 100) / n_denom; //formula is (n_y_ac * n_x_dc_max) / 
+ 161:spo2_algorithm.c ****         n_i_ratio_count++;
+ 162:spo2_algorithm.c ****       }
+ 163:spo2_algorithm.c ****     }
+ 164:spo2_algorithm.c ****   }
+ 165:spo2_algorithm.c ****   
+ 166:spo2_algorithm.c ****   // choose median value since PPG signal may vary from beat to beat
+ 167:spo2_algorithm.c ****   maxim_sort_ascend(an_ratio, n_i_ratio_count);
+ 168:spo2_algorithm.c ****   n_middle_idx = n_i_ratio_count / 2;
+ 169:spo2_algorithm.c **** 
+ 170:spo2_algorithm.c ****   if (n_middle_idx > 1)
+ 171:spo2_algorithm.c ****     n_ratio_average = (an_ratio[n_middle_idx-1] + an_ratio[n_middle_idx]) / 2; // use median
+ 172:spo2_algorithm.c ****   else
+ 173:spo2_algorithm.c ****     n_ratio_average = an_ratio[n_middle_idx];
+ 174:spo2_algorithm.c **** 
+ 175:spo2_algorithm.c ****   if(n_ratio_average > 2 && n_ratio_average < 184){
+ 176:spo2_algorithm.c ****     n_spo2_calc = uch_spo2_table[n_ratio_average];
+ 177:spo2_algorithm.c ****     *pn_spo2 = n_spo2_calc;
+ 178:spo2_algorithm.c ****     *pch_spo2_valid = 1; // float_SPO2 = -45.060*n_ratio_average*n_ratio_average/10000 + 30.354*n_r
+ 179:spo2_algorithm.c ****   }
+ 180:spo2_algorithm.c ****   else{
+ 181:spo2_algorithm.c ****     *pn_spo2 = -999; // do not use SPO2 since signal ratio is out of range
+ 182:spo2_algorithm.c ****     *pch_spo2_valid = 0; 
+ 183:spo2_algorithm.c ****   }
+ 184:spo2_algorithm.c **** }
+ 185:spo2_algorithm.c **** 
+ 186:spo2_algorithm.c **** 
+ 187:spo2_algorithm.c **** void maxim_find_peaks(int32_t *pn_locs, int32_t *n_npks, int32_t *pn_x, int32_t n_size, int32_t n_m
+ 188:spo2_algorithm.c **** /**
+ 189:spo2_algorithm.c **** * \brief        Find peaks
+ 190:spo2_algorithm.c **** * \par          Details
+ 191:spo2_algorithm.c **** *               Find at most MAX_NUM peaks above MIN_HEIGHT separated by at least MIN_DISTANCE
+ 192:spo2_algorithm.c **** *
+ 193:spo2_algorithm.c **** * \retval       None
+ 194:spo2_algorithm.c **** */
+ 195:spo2_algorithm.c **** {
+ 196:spo2_algorithm.c ****   maxim_peaks_above_min_height(pn_locs, n_npks, pn_x, n_size, n_min_height);
+ 197:spo2_algorithm.c ****   maxim_remove_close_peaks(pn_locs, n_npks, pn_x, n_min_distance);
+ 198:spo2_algorithm.c ****   *n_npks = min(*n_npks, n_max_num);
+ 199:spo2_algorithm.c **** }
+ 200:spo2_algorithm.c **** 
+ 201:spo2_algorithm.c **** void maxim_peaks_above_min_height(int32_t *pn_locs, int32_t *n_npks, int32_t *pn_x, int32_t n_size,
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 5
+
+
+ 202:spo2_algorithm.c **** /**
+ 203:spo2_algorithm.c **** * \brief        Find peaks above n_min_height
+ 204:spo2_algorithm.c **** * \par          Details
+ 205:spo2_algorithm.c **** *               Find all peaks above MIN_HEIGHT
+ 206:spo2_algorithm.c **** *
+ 207:spo2_algorithm.c **** * \retval       None
+ 208:spo2_algorithm.c **** */
+ 209:spo2_algorithm.c **** {
+  28              		.loc 1 209 0
+  29              		.cfi_startproc
+  30              		@ args = 4, pretend = 0, frame = 8
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              	.LVL0:
+  33 0000 F0B5     		push	{r4, r5, r6, r7, lr}
+  34              		.cfi_def_cfa_offset 20
+  35              		.cfi_offset 4, -20
+  36              		.cfi_offset 5, -16
+  37              		.cfi_offset 6, -12
+  38              		.cfi_offset 7, -8
+  39              		.cfi_offset 14, -4
+  40 0002 4746     		mov	r7, r8
+  41 0004 80B4     		push	{r7}
+  42              		.cfi_def_cfa_offset 24
+  43              		.cfi_offset 8, -24
+  44 0006 82B0     		sub	sp, sp, #8
+  45              		.cfi_def_cfa_offset 32
+  46 0008 0190     		str	r0, [sp, #4]
+  47 000a 0800     		movs	r0, r1
+  48              	.LVL1:
+  49 000c 1900     		movs	r1, r3
+  50              	.LVL2:
+  51 000e 089B     		ldr	r3, [sp, #32]
+  52              	.LVL3:
+  53 0010 9846     		mov	r8, r3
+  54              	.LVL4:
+ 210:spo2_algorithm.c ****   int32_t i = 1, n_width;
+ 211:spo2_algorithm.c ****   *n_npks = 0;
+  55              		.loc 1 211 0
+  56 0012 0023     		movs	r3, #0
+  57 0014 0360     		str	r3, [r0]
+ 210:spo2_algorithm.c ****   int32_t i = 1, n_width;
+  58              		.loc 1 210 0
+  59 0016 0126     		movs	r6, #1
+ 212:spo2_algorithm.c ****   
+ 213:spo2_algorithm.c ****   while (i < n_size - 1){
+  60              		.loc 1 213 0
+  61 0018 28E0     		b	.L2
+  62              	.LVL5:
+  63              	.L8:
+ 214:spo2_algorithm.c ****     if (pn_x[i] > n_min_height && pn_x[i] > pn_x[i-1]){      // find left edge of potential peaks
+  64              		.loc 1 214 0
+  65 001a B300     		lsls	r3, r6, #2
+  66 001c 9F58     		ldr	r7, [r3, r2]
+  67 001e 4745     		cmp	r7, r8
+  68 0020 1FDD     		ble	.L3
+  69              		.loc 1 214 0 is_stmt 0 discriminator 1
+  70 0022 164B     		ldr	r3, .L12
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 6
+
+
+  71 0024 F318     		adds	r3, r6, r3
+  72 0026 9B00     		lsls	r3, r3, #2
+  73 0028 9B58     		ldr	r3, [r3, r2]
+  74 002a 9F42     		cmp	r7, r3
+  75 002c 02DC     		bgt	.L9
+  76 002e 18E0     		b	.L3
+  77              	.LVL6:
+  78              	.L6:
+ 215:spo2_algorithm.c ****       n_width = 1;
+ 216:spo2_algorithm.c ****       while (i + n_width < n_size && pn_x[i] == pn_x[i+n_width])  // find flat peaks
+ 217:spo2_algorithm.c ****         n_width++;
+  79              		.loc 1 217 0 is_stmt 1
+  80 0030 0135     		adds	r5, r5, #1
+  81              	.LVL7:
+  82 0032 00E0     		b	.L4
+  83              	.LVL8:
+  84              	.L9:
+  85 0034 0125     		movs	r5, #1
+  86              	.L4:
+  87              	.LVL9:
+ 216:spo2_algorithm.c ****         n_width++;
+  88              		.loc 1 216 0
+  89 0036 7419     		adds	r4, r6, r5
+  90 0038 A142     		cmp	r1, r4
+  91 003a 03DD     		ble	.L5
+ 216:spo2_algorithm.c ****         n_width++;
+  92              		.loc 1 216 0 is_stmt 0 discriminator 1
+  93 003c A300     		lsls	r3, r4, #2
+  94 003e 9B58     		ldr	r3, [r3, r2]
+  95 0040 9F42     		cmp	r7, r3
+  96 0042 F5D0     		beq	.L6
+  97              	.L5:
+ 218:spo2_algorithm.c ****       if (pn_x[i] > pn_x[i+n_width] && (*n_npks) < 15){      // find right edge of peaks
+  98              		.loc 1 218 0 is_stmt 1
+  99 0044 A300     		lsls	r3, r4, #2
+ 100 0046 9B58     		ldr	r3, [r3, r2]
+ 101 0048 9F42     		cmp	r7, r3
+ 102 004a 0CDD     		ble	.L10
+ 103              		.loc 1 218 0 is_stmt 0 discriminator 1
+ 104 004c 0368     		ldr	r3, [r0]
+ 105 004e 0E2B     		cmp	r3, #14
+ 106 0050 0BDC     		bgt	.L11
+ 219:spo2_algorithm.c ****         pn_locs[(*n_npks)++] = i;    
+ 107              		.loc 1 219 0 is_stmt 1
+ 108 0052 5C1C     		adds	r4, r3, #1
+ 109 0054 0460     		str	r4, [r0]
+ 110 0056 9B00     		lsls	r3, r3, #2
+ 111 0058 019C     		ldr	r4, [sp, #4]
+ 112 005a E650     		str	r6, [r4, r3]
+ 220:spo2_algorithm.c ****         // for flat peaks, peak location is left edge
+ 221:spo2_algorithm.c ****         i += n_width + 1;
+ 113              		.loc 1 221 0
+ 114 005c 0135     		adds	r5, r5, #1
+ 115              	.LVL10:
+ 116 005e 7619     		adds	r6, r6, r5
+ 117              	.LVL11:
+ 118 0060 04E0     		b	.L2
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 7
+
+
+ 119              	.LVL12:
+ 120              	.L3:
+ 222:spo2_algorithm.c ****       }
+ 223:spo2_algorithm.c ****       else
+ 224:spo2_algorithm.c ****         i += n_width;
+ 225:spo2_algorithm.c ****     }
+ 226:spo2_algorithm.c ****     else
+ 227:spo2_algorithm.c ****       i++;
+ 121              		.loc 1 227 0
+ 122 0062 0136     		adds	r6, r6, #1
+ 123              	.LVL13:
+ 124 0064 02E0     		b	.L2
+ 125              	.LVL14:
+ 126              	.L10:
+ 224:spo2_algorithm.c ****     }
+ 127              		.loc 1 224 0
+ 128 0066 2600     		movs	r6, r4
+ 129              	.LVL15:
+ 130 0068 00E0     		b	.L2
+ 131              	.LVL16:
+ 132              	.L11:
+ 133 006a 2600     		movs	r6, r4
+ 134              	.LVL17:
+ 135              	.L2:
+ 213:spo2_algorithm.c ****     if (pn_x[i] > n_min_height && pn_x[i] > pn_x[i-1]){      // find left edge of potential peaks
+ 136              		.loc 1 213 0
+ 137 006c 4B1E     		subs	r3, r1, #1
+ 138 006e 9E42     		cmp	r6, r3
+ 139 0070 D3DB     		blt	.L8
+ 228:spo2_algorithm.c ****   }
+ 229:spo2_algorithm.c **** }
+ 140              		.loc 1 229 0
+ 141 0072 02B0     		add	sp, sp, #8
+ 142              		@ sp needed
+ 143              	.LVL18:
+ 144 0074 04BC     		pop	{r2}
+ 145 0076 9046     		mov	r8, r2
+ 146 0078 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 147              	.L13:
+ 148 007a C046     		.align	2
+ 149              	.L12:
+ 150 007c FFFFFF3F 		.word	1073741823
+ 151              		.cfi_endproc
+ 152              	.LFE34:
+ 153              		.size	maxim_peaks_above_min_height, .-maxim_peaks_above_min_height
+ 154              		.section	.text.maxim_sort_ascend,"ax",%progbits
+ 155              		.align	2
+ 156              		.global	maxim_sort_ascend
+ 157              		.code	16
+ 158              		.thumb_func
+ 159              		.type	maxim_sort_ascend, %function
+ 160              	maxim_sort_ascend:
+ 161              	.LFB36:
+ 230:spo2_algorithm.c **** 
+ 231:spo2_algorithm.c **** void maxim_remove_close_peaks(int32_t *pn_locs, int32_t *pn_npks, int32_t *pn_x, int32_t n_min_dist
+ 232:spo2_algorithm.c **** /**
+ 233:spo2_algorithm.c **** * \brief        Remove peaks
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 8
+
+
+ 234:spo2_algorithm.c **** * \par          Details
+ 235:spo2_algorithm.c **** *               Remove peaks separated by less than MIN_DISTANCE
+ 236:spo2_algorithm.c **** *
+ 237:spo2_algorithm.c **** * \retval       None
+ 238:spo2_algorithm.c **** */
+ 239:spo2_algorithm.c **** {
+ 240:spo2_algorithm.c ****   int32_t i, j, n_old_npks, n_dist;
+ 241:spo2_algorithm.c ****     
+ 242:spo2_algorithm.c ****   /* Order peaks from large to small */
+ 243:spo2_algorithm.c ****   maxim_sort_indices_descend(pn_x, pn_locs, *pn_npks);
+ 244:spo2_algorithm.c **** 
+ 245:spo2_algorithm.c ****   for (i = -1; i < *pn_npks; i++){
+ 246:spo2_algorithm.c ****     n_old_npks = *pn_npks;
+ 247:spo2_algorithm.c ****     *pn_npks = i + 1;
+ 248:spo2_algorithm.c ****     for (j = i + 1; j < n_old_npks; j++){
+ 249:spo2_algorithm.c ****       n_dist = pn_locs[j] - (i == -1 ? -1 : pn_locs[i]); // lag-zero peak of autocorr is at index -
+ 250:spo2_algorithm.c ****       if (n_dist > n_min_distance || n_dist < -n_min_distance)
+ 251:spo2_algorithm.c ****         pn_locs[(*pn_npks)++] = pn_locs[j];
+ 252:spo2_algorithm.c ****     }
+ 253:spo2_algorithm.c ****   }
+ 254:spo2_algorithm.c **** 
+ 255:spo2_algorithm.c ****   // Resort indices into ascending order
+ 256:spo2_algorithm.c ****   maxim_sort_ascend(pn_locs, *pn_npks);
+ 257:spo2_algorithm.c **** }
+ 258:spo2_algorithm.c **** 
+ 259:spo2_algorithm.c **** void maxim_sort_ascend(int32_t *pn_x, int32_t n_size) 
+ 260:spo2_algorithm.c **** /**
+ 261:spo2_algorithm.c **** * \brief        Sort array
+ 262:spo2_algorithm.c **** * \par          Details
+ 263:spo2_algorithm.c **** *               Sort array in ascending order (insertion sort algorithm)
+ 264:spo2_algorithm.c **** *
+ 265:spo2_algorithm.c **** * \retval       None
+ 266:spo2_algorithm.c **** */
+ 267:spo2_algorithm.c **** {
+ 162              		.loc 1 267 0
+ 163              		.cfi_startproc
+ 164              		@ args = 0, pretend = 0, frame = 0
+ 165              		@ frame_needed = 0, uses_anonymous_args = 0
+ 166              	.LVL19:
+ 167 0000 70B5     		push	{r4, r5, r6, lr}
+ 168              		.cfi_def_cfa_offset 16
+ 169              		.cfi_offset 4, -16
+ 170              		.cfi_offset 5, -12
+ 171              		.cfi_offset 6, -8
+ 172              		.cfi_offset 14, -4
+ 173              	.LVL20:
+ 268:spo2_algorithm.c ****   int32_t i, j, n_temp;
+ 269:spo2_algorithm.c ****   for (i = 1; i < n_size; i++) {
+ 174              		.loc 1 269 0
+ 175 0002 0126     		movs	r6, #1
+ 176 0004 11E0     		b	.L15
+ 177              	.LVL21:
+ 178              	.L19:
+ 270:spo2_algorithm.c ****     n_temp = pn_x[i];
+ 179              		.loc 1 270 0
+ 180 0006 B300     		lsls	r3, r6, #2
+ 181 0008 C558     		ldr	r5, [r0, r3]
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 9
+
+
+ 182              	.LVL22:
+ 271:spo2_algorithm.c ****     for (j = i; j > 0 && n_temp < pn_x[j-1]; j--)
+ 183              		.loc 1 271 0
+ 184 000a 3300     		movs	r3, r6
+ 185 000c 02E0     		b	.L16
+ 186              	.LVL23:
+ 187              	.L18:
+ 272:spo2_algorithm.c ****       pn_x[j] = pn_x[j-1];
+ 188              		.loc 1 272 0 discriminator 4
+ 189 000e 9C00     		lsls	r4, r3, #2
+ 190 0010 0251     		str	r2, [r0, r4]
+ 271:spo2_algorithm.c ****     for (j = i; j > 0 && n_temp < pn_x[j-1]; j--)
+ 191              		.loc 1 271 0 discriminator 4
+ 192 0012 013B     		subs	r3, r3, #1
+ 193              	.LVL24:
+ 194              	.L16:
+ 271:spo2_algorithm.c ****     for (j = i; j > 0 && n_temp < pn_x[j-1]; j--)
+ 195              		.loc 1 271 0 is_stmt 0 discriminator 1
+ 196 0014 002B     		cmp	r3, #0
+ 197 0016 05DD     		ble	.L17
+ 271:spo2_algorithm.c ****     for (j = i; j > 0 && n_temp < pn_x[j-1]; j--)
+ 198              		.loc 1 271 0 discriminator 3
+ 199 0018 054A     		ldr	r2, .L20
+ 200 001a 9A18     		adds	r2, r3, r2
+ 201 001c 9200     		lsls	r2, r2, #2
+ 202 001e 1258     		ldr	r2, [r2, r0]
+ 203 0020 9542     		cmp	r5, r2
+ 204 0022 F4DB     		blt	.L18
+ 205              	.L17:
+ 273:spo2_algorithm.c ****     pn_x[j] = n_temp;
+ 206              		.loc 1 273 0 is_stmt 1 discriminator 2
+ 207 0024 9B00     		lsls	r3, r3, #2
+ 208              	.LVL25:
+ 209 0026 C550     		str	r5, [r0, r3]
+ 269:spo2_algorithm.c ****     n_temp = pn_x[i];
+ 210              		.loc 1 269 0 discriminator 2
+ 211 0028 0136     		adds	r6, r6, #1
+ 212              	.LVL26:
+ 213              	.L15:
+ 269:spo2_algorithm.c ****     n_temp = pn_x[i];
+ 214              		.loc 1 269 0 is_stmt 0 discriminator 1
+ 215 002a 8E42     		cmp	r6, r1
+ 216 002c EBDB     		blt	.L19
+ 274:spo2_algorithm.c ****   }
+ 275:spo2_algorithm.c **** }
+ 217              		.loc 1 275 0 is_stmt 1
+ 218              		@ sp needed
+ 219              	.LVL27:
+ 220 002e 70BD     		pop	{r4, r5, r6, pc}
+ 221              	.L21:
+ 222              		.align	2
+ 223              	.L20:
+ 224 0030 FFFFFF3F 		.word	1073741823
+ 225              		.cfi_endproc
+ 226              	.LFE36:
+ 227              		.size	maxim_sort_ascend, .-maxim_sort_ascend
+ 228              		.section	.text.maxim_sort_indices_descend,"ax",%progbits
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 10
+
+
+ 229              		.align	2
+ 230              		.global	maxim_sort_indices_descend
+ 231              		.code	16
+ 232              		.thumb_func
+ 233              		.type	maxim_sort_indices_descend, %function
+ 234              	maxim_sort_indices_descend:
+ 235              	.LFB37:
+ 276:spo2_algorithm.c **** 
+ 277:spo2_algorithm.c **** void maxim_sort_indices_descend(int32_t *pn_x, int32_t *pn_indx, int32_t n_size)
+ 278:spo2_algorithm.c **** /**
+ 279:spo2_algorithm.c **** * \brief        Sort indices
+ 280:spo2_algorithm.c **** * \par          Details
+ 281:spo2_algorithm.c **** *               Sort indices according to descending order (insertion sort algorithm)
+ 282:spo2_algorithm.c **** *
+ 283:spo2_algorithm.c **** * \retval       None
+ 284:spo2_algorithm.c **** */ 
+ 285:spo2_algorithm.c **** {
+ 236              		.loc 1 285 0
+ 237              		.cfi_startproc
+ 238              		@ args = 0, pretend = 0, frame = 0
+ 239              		@ frame_needed = 0, uses_anonymous_args = 0
+ 240              	.LVL28:
+ 241 0000 F0B5     		push	{r4, r5, r6, r7, lr}
+ 242              		.cfi_def_cfa_offset 20
+ 243              		.cfi_offset 4, -20
+ 244              		.cfi_offset 5, -16
+ 245              		.cfi_offset 6, -12
+ 246              		.cfi_offset 7, -8
+ 247              		.cfi_offset 14, -4
+ 248 0002 9446     		mov	ip, r2
+ 249              	.LVL29:
+ 286:spo2_algorithm.c ****   int32_t i, j, n_temp;
+ 287:spo2_algorithm.c ****   for (i = 1; i < n_size; i++) {
+ 250              		.loc 1 287 0
+ 251 0004 0122     		movs	r2, #1
+ 252              	.LVL30:
+ 253 0006 15E0     		b	.L23
+ 254              	.LVL31:
+ 255              	.L27:
+ 288:spo2_algorithm.c ****     n_temp = pn_indx[i];
+ 256              		.loc 1 288 0
+ 257 0008 9300     		lsls	r3, r2, #2
+ 258 000a CF58     		ldr	r7, [r1, r3]
+ 259              	.LVL32:
+ 289:spo2_algorithm.c ****     for (j = i; j > 0 && pn_x[n_temp] > pn_x[pn_indx[j-1]]; j--)
+ 260              		.loc 1 289 0
+ 261 000c 1300     		movs	r3, r2
+ 262 000e 02E0     		b	.L24
+ 263              	.LVL33:
+ 264              	.L26:
+ 290:spo2_algorithm.c ****       pn_indx[j] = pn_indx[j-1];
+ 265              		.loc 1 290 0 discriminator 4
+ 266 0010 9D00     		lsls	r5, r3, #2
+ 267 0012 4C51     		str	r4, [r1, r5]
+ 289:spo2_algorithm.c ****     for (j = i; j > 0 && pn_x[n_temp] > pn_x[pn_indx[j-1]]; j--)
+ 268              		.loc 1 289 0 discriminator 4
+ 269 0014 013B     		subs	r3, r3, #1
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 11
+
+
+ 270              	.LVL34:
+ 271              	.L24:
+ 289:spo2_algorithm.c ****     for (j = i; j > 0 && pn_x[n_temp] > pn_x[pn_indx[j-1]]; j--)
+ 272              		.loc 1 289 0 is_stmt 0 discriminator 1
+ 273 0016 002B     		cmp	r3, #0
+ 274 0018 09DD     		ble	.L25
+ 289:spo2_algorithm.c ****     for (j = i; j > 0 && pn_x[n_temp] > pn_x[pn_indx[j-1]]; j--)
+ 275              		.loc 1 289 0 discriminator 3
+ 276 001a BC00     		lsls	r4, r7, #2
+ 277 001c 2658     		ldr	r6, [r4, r0]
+ 278 001e 074C     		ldr	r4, .L28
+ 279 0020 1C19     		adds	r4, r3, r4
+ 280 0022 A400     		lsls	r4, r4, #2
+ 281 0024 6458     		ldr	r4, [r4, r1]
+ 282 0026 A500     		lsls	r5, r4, #2
+ 283 0028 2D58     		ldr	r5, [r5, r0]
+ 284 002a AE42     		cmp	r6, r5
+ 285 002c F0DC     		bgt	.L26
+ 286              	.L25:
+ 291:spo2_algorithm.c ****     pn_indx[j] = n_temp;
+ 287              		.loc 1 291 0 is_stmt 1 discriminator 2
+ 288 002e 9B00     		lsls	r3, r3, #2
+ 289              	.LVL35:
+ 290 0030 CF50     		str	r7, [r1, r3]
+ 287:spo2_algorithm.c ****     n_temp = pn_indx[i];
+ 291              		.loc 1 287 0 discriminator 2
+ 292 0032 0132     		adds	r2, r2, #1
+ 293              	.LVL36:
+ 294              	.L23:
+ 287:spo2_algorithm.c ****     n_temp = pn_indx[i];
+ 295              		.loc 1 287 0 is_stmt 0 discriminator 1
+ 296 0034 6245     		cmp	r2, ip
+ 297 0036 E7DB     		blt	.L27
+ 292:spo2_algorithm.c ****   }
+ 293:spo2_algorithm.c **** }
+ 298              		.loc 1 293 0 is_stmt 1
+ 299              		@ sp needed
+ 300 0038 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 301              	.L29:
+ 302 003a C046     		.align	2
+ 303              	.L28:
+ 304 003c FFFFFF3F 		.word	1073741823
+ 305              		.cfi_endproc
+ 306              	.LFE37:
+ 307              		.size	maxim_sort_indices_descend, .-maxim_sort_indices_descend
+ 308              		.section	.text.maxim_remove_close_peaks,"ax",%progbits
+ 309              		.align	2
+ 310              		.global	maxim_remove_close_peaks
+ 311              		.code	16
+ 312              		.thumb_func
+ 313              		.type	maxim_remove_close_peaks, %function
+ 314              	maxim_remove_close_peaks:
+ 315              	.LFB35:
+ 239:spo2_algorithm.c ****   int32_t i, j, n_old_npks, n_dist;
+ 316              		.loc 1 239 0
+ 317              		.cfi_startproc
+ 318              		@ args = 0, pretend = 0, frame = 0
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 12
+
+
+ 319              		@ frame_needed = 0, uses_anonymous_args = 0
+ 320              	.LVL37:
+ 321 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 322              		.cfi_def_cfa_offset 24
+ 323              		.cfi_offset 3, -24
+ 324              		.cfi_offset 4, -20
+ 325              		.cfi_offset 5, -16
+ 326              		.cfi_offset 6, -12
+ 327              		.cfi_offset 7, -8
+ 328              		.cfi_offset 14, -4
+ 329 0002 4F46     		mov	r7, r9
+ 330 0004 4646     		mov	r6, r8
+ 331 0006 C0B4     		push	{r6, r7}
+ 332              		.cfi_def_cfa_offset 32
+ 333              		.cfi_offset 8, -32
+ 334              		.cfi_offset 9, -28
+ 335 0008 0400     		movs	r4, r0
+ 336 000a 0D00     		movs	r5, r1
+ 337 000c 1000     		movs	r0, r2
+ 338              	.LVL38:
+ 339 000e 1E00     		movs	r6, r3
+ 243:spo2_algorithm.c **** 
+ 340              		.loc 1 243 0
+ 341 0010 0A68     		ldr	r2, [r1]
+ 342              	.LVL39:
+ 343 0012 2100     		movs	r1, r4
+ 344              	.LVL40:
+ 345 0014 FFF7FEFF 		bl	maxim_sort_indices_descend
+ 346              	.LVL41:
+ 245:spo2_algorithm.c ****     n_old_npks = *pn_npks;
+ 347              		.loc 1 245 0
+ 348 0018 0127     		movs	r7, #1
+ 349 001a 7F42     		rsbs	r7, r7, #0
+ 350 001c 21E0     		b	.L31
+ 351              	.LVL42:
+ 352              	.L37:
+ 247:spo2_algorithm.c ****     for (j = i + 1; j < n_old_npks; j++){
+ 353              		.loc 1 247 0
+ 354 001e 7B1C     		adds	r3, r7, #1
+ 355              	.LVL43:
+ 356 0020 9C46     		mov	ip, r3
+ 357 0022 2B60     		str	r3, [r5]
+ 358              	.LVL44:
+ 248:spo2_algorithm.c ****       n_dist = pn_locs[j] - (i == -1 ? -1 : pn_locs[i]); // lag-zero peak of autocorr is at index -
+ 359              		.loc 1 248 0
+ 360 0024 1800     		movs	r0, r3
+ 361 0026 19E0     		b	.L32
+ 362              	.LVL45:
+ 363              	.L36:
+ 249:spo2_algorithm.c ****       if (n_dist > n_min_distance || n_dist < -n_min_distance)
+ 364              		.loc 1 249 0
+ 365 0028 8300     		lsls	r3, r0, #2
+ 366 002a E318     		adds	r3, r4, r3
+ 367 002c 1A68     		ldr	r2, [r3]
+ 368 002e 791C     		adds	r1, r7, #1
+ 369 0030 03D0     		beq	.L38
+ 249:spo2_algorithm.c ****       if (n_dist > n_min_distance || n_dist < -n_min_distance)
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 13
+
+
+ 370              		.loc 1 249 0 is_stmt 0 discriminator 1
+ 371 0032 B900     		lsls	r1, r7, #2
+ 372 0034 6158     		ldr	r1, [r4, r1]
+ 373 0036 8846     		mov	r8, r1
+ 374 0038 02E0     		b	.L33
+ 375              	.L38:
+ 249:spo2_algorithm.c ****       if (n_dist > n_min_distance || n_dist < -n_min_distance)
+ 376              		.loc 1 249 0
+ 377 003a 0121     		movs	r1, #1
+ 378 003c 4942     		rsbs	r1, r1, #0
+ 379 003e 8846     		mov	r8, r1
+ 380              	.L33:
+ 249:spo2_algorithm.c ****       if (n_dist > n_min_distance || n_dist < -n_min_distance)
+ 381              		.loc 1 249 0 discriminator 4
+ 382 0040 4146     		mov	r1, r8
+ 383 0042 521A     		subs	r2, r2, r1
+ 384              	.LVL46:
+ 250:spo2_algorithm.c ****         pn_locs[(*pn_npks)++] = pn_locs[j];
+ 385              		.loc 1 250 0 is_stmt 1 discriminator 4
+ 386 0044 B242     		cmp	r2, r6
+ 387 0046 02DC     		bgt	.L34
+ 250:spo2_algorithm.c ****         pn_locs[(*pn_npks)++] = pn_locs[j];
+ 388              		.loc 1 250 0 is_stmt 0 discriminator 1
+ 389 0048 7142     		rsbs	r1, r6, #0
+ 390 004a 8A42     		cmp	r2, r1
+ 391 004c 05DA     		bge	.L35
+ 392              	.L34:
+ 251:spo2_algorithm.c ****     }
+ 393              		.loc 1 251 0 is_stmt 1
+ 394 004e 2A68     		ldr	r2, [r5]
+ 395              	.LVL47:
+ 396 0050 511C     		adds	r1, r2, #1
+ 397 0052 2960     		str	r1, [r5]
+ 398              	.LVL48:
+ 399 0054 9200     		lsls	r2, r2, #2
+ 400 0056 1B68     		ldr	r3, [r3]
+ 401 0058 A350     		str	r3, [r4, r2]
+ 402              	.L35:
+ 248:spo2_algorithm.c ****       n_dist = pn_locs[j] - (i == -1 ? -1 : pn_locs[i]); // lag-zero peak of autocorr is at index -
+ 403              		.loc 1 248 0 discriminator 2
+ 404 005a 0130     		adds	r0, r0, #1
+ 405              	.LVL49:
+ 406              	.L32:
+ 248:spo2_algorithm.c ****       n_dist = pn_locs[j] - (i == -1 ? -1 : pn_locs[i]); // lag-zero peak of autocorr is at index -
+ 407              		.loc 1 248 0 is_stmt 0 discriminator 1
+ 408 005c 4845     		cmp	r0, r9
+ 409 005e E3DB     		blt	.L36
+ 245:spo2_algorithm.c ****     n_old_npks = *pn_npks;
+ 410              		.loc 1 245 0 is_stmt 1
+ 411 0060 6746     		mov	r7, ip
+ 412              	.LVL50:
+ 413              	.L31:
+ 245:spo2_algorithm.c ****     n_old_npks = *pn_npks;
+ 414              		.loc 1 245 0 is_stmt 0 discriminator 1
+ 415 0062 2B68     		ldr	r3, [r5]
+ 416 0064 9946     		mov	r9, r3
+ 417 0066 9F42     		cmp	r7, r3
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 14
+
+
+ 418 0068 D9DB     		blt	.L37
+ 256:spo2_algorithm.c **** }
+ 419              		.loc 1 256 0 is_stmt 1
+ 420 006a 1900     		movs	r1, r3
+ 421 006c 2000     		movs	r0, r4
+ 422 006e FFF7FEFF 		bl	maxim_sort_ascend
+ 423              	.LVL51:
+ 257:spo2_algorithm.c **** 
+ 424              		.loc 1 257 0
+ 425              		@ sp needed
+ 426              	.LVL52:
+ 427              	.LVL53:
+ 428              	.LVL54:
+ 429              	.LVL55:
+ 430 0072 0CBC     		pop	{r2, r3}
+ 431 0074 9046     		mov	r8, r2
+ 432 0076 9946     		mov	r9, r3
+ 433 0078 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 434              		.cfi_endproc
+ 435              	.LFE35:
+ 436              		.size	maxim_remove_close_peaks, .-maxim_remove_close_peaks
+ 437 007a C046     		.section	.text.maxim_find_peaks,"ax",%progbits
+ 438              		.align	2
+ 439              		.global	maxim_find_peaks
+ 440              		.code	16
+ 441              		.thumb_func
+ 442              		.type	maxim_find_peaks, %function
+ 443              	maxim_find_peaks:
+ 444              	.LFB33:
+ 195:spo2_algorithm.c ****   maxim_peaks_above_min_height(pn_locs, n_npks, pn_x, n_size, n_min_height);
+ 445              		.loc 1 195 0
+ 446              		.cfi_startproc
+ 447              		@ args = 12, pretend = 0, frame = 0
+ 448              		@ frame_needed = 0, uses_anonymous_args = 0
+ 449              	.LVL56:
+ 450 0000 70B5     		push	{r4, r5, r6, lr}
+ 451              		.cfi_def_cfa_offset 16
+ 452              		.cfi_offset 4, -16
+ 453              		.cfi_offset 5, -12
+ 454              		.cfi_offset 6, -8
+ 455              		.cfi_offset 14, -4
+ 456 0002 82B0     		sub	sp, sp, #8
+ 457              		.cfi_def_cfa_offset 24
+ 458 0004 0500     		movs	r5, r0
+ 459 0006 0C00     		movs	r4, r1
+ 460 0008 1600     		movs	r6, r2
+ 196:spo2_algorithm.c ****   maxim_remove_close_peaks(pn_locs, n_npks, pn_x, n_min_distance);
+ 461              		.loc 1 196 0
+ 462 000a 069A     		ldr	r2, [sp, #24]
+ 463              	.LVL57:
+ 464 000c 0092     		str	r2, [sp]
+ 465 000e 3200     		movs	r2, r6
+ 466 0010 FFF7FEFF 		bl	maxim_peaks_above_min_height
+ 467              	.LVL58:
+ 197:spo2_algorithm.c ****   *n_npks = min(*n_npks, n_max_num);
+ 468              		.loc 1 197 0
+ 469 0014 079B     		ldr	r3, [sp, #28]
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 15
+
+
+ 470 0016 3200     		movs	r2, r6
+ 471 0018 2100     		movs	r1, r4
+ 472 001a 2800     		movs	r0, r5
+ 473 001c FFF7FEFF 		bl	maxim_remove_close_peaks
+ 474              	.LVL59:
+ 198:spo2_algorithm.c **** }
+ 475              		.loc 1 198 0
+ 476 0020 2368     		ldr	r3, [r4]
+ 477 0022 089A     		ldr	r2, [sp, #32]
+ 478 0024 9342     		cmp	r3, r2
+ 479 0026 00DD     		ble	.L40
+ 480 0028 1300     		movs	r3, r2
+ 481              	.L40:
+ 482 002a 2360     		str	r3, [r4]
+ 199:spo2_algorithm.c **** 
+ 483              		.loc 1 199 0
+ 484 002c 02B0     		add	sp, sp, #8
+ 485              		@ sp needed
+ 486              	.LVL60:
+ 487              	.LVL61:
+ 488              	.LVL62:
+ 489 002e 70BD     		pop	{r4, r5, r6, pc}
+ 490              		.cfi_endproc
+ 491              	.LFE33:
+ 492              		.size	maxim_find_peaks, .-maxim_find_peaks
+ 493              		.global	__aeabi_uidiv
+ 494              		.global	__aeabi_idiv
+ 495              		.section	.text.maxim_heart_rate_and_oxygen_saturation,"ax",%progbits
+ 496              		.align	2
+ 497              		.global	maxim_heart_rate_and_oxygen_saturation
+ 498              		.code	16
+ 499              		.thumb_func
+ 500              		.type	maxim_heart_rate_and_oxygen_saturation, %function
+ 501              	maxim_heart_rate_and_oxygen_saturation:
+ 502              	.LFB32:
+  54:spo2_algorithm.c ****   uint32_t un_ir_mean;
+ 503              		.loc 1 54 0
+ 504              		.cfi_startproc
+ 505              		@ args = 12, pretend = 0, frame = 120
+ 506              		@ frame_needed = 0, uses_anonymous_args = 0
+ 507              	.LVL63:
+ 508 0000 F0B5     		push	{r4, r5, r6, r7, lr}
+ 509              		.cfi_def_cfa_offset 20
+ 510              		.cfi_offset 4, -20
+ 511              		.cfi_offset 5, -16
+ 512              		.cfi_offset 6, -12
+ 513              		.cfi_offset 7, -8
+ 514              		.cfi_offset 14, -4
+ 515 0002 5F46     		mov	r7, fp
+ 516 0004 5646     		mov	r6, r10
+ 517 0006 4D46     		mov	r5, r9
+ 518 0008 4446     		mov	r4, r8
+ 519 000a F0B4     		push	{r4, r5, r6, r7}
+ 520              		.cfi_def_cfa_offset 36
+ 521              		.cfi_offset 8, -36
+ 522              		.cfi_offset 9, -32
+ 523              		.cfi_offset 10, -28
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 16
+
+
+ 524              		.cfi_offset 11, -24
+ 525 000c A3B0     		sub	sp, sp, #140
+ 526              		.cfi_def_cfa_offset 176
+ 527 000e 0600     		movs	r6, r0
+ 528 0010 0D00     		movs	r5, r1
+ 529 0012 1700     		movs	r7, r2
+ 530 0014 0B93     		str	r3, [sp, #44]
+ 531              	.LVL64:
+  72:spo2_algorithm.c ****     un_ir_mean += pun_ir_buffer[k];
+ 532              		.loc 1 72 0
+ 533 0016 0023     		movs	r3, #0
+ 534              	.LVL65:
+  71:spo2_algorithm.c ****   for (k = 0; k < n_ir_buffer_length; k++) 
+ 535              		.loc 1 71 0
+ 536 0018 0020     		movs	r0, #0
+ 537              	.LVL66:
+  72:spo2_algorithm.c ****     un_ir_mean += pun_ir_buffer[k];
+ 538              		.loc 1 72 0
+ 539 001a 03E0     		b	.L42
+ 540              	.LVL67:
+ 541              	.L43:
+  73:spo2_algorithm.c ****   un_ir_mean = un_ir_mean / n_ir_buffer_length;
+ 542              		.loc 1 73 0 discriminator 3
+ 543 001c 9A00     		lsls	r2, r3, #2
+ 544 001e 9259     		ldr	r2, [r2, r6]
+ 545 0020 8018     		adds	r0, r0, r2
+ 546              	.LVL68:
+  72:spo2_algorithm.c ****     un_ir_mean += pun_ir_buffer[k];
+ 547              		.loc 1 72 0 discriminator 3
+ 548 0022 0133     		adds	r3, r3, #1
+ 549              	.LVL69:
+ 550              	.L42:
+  72:spo2_algorithm.c ****     un_ir_mean += pun_ir_buffer[k];
+ 551              		.loc 1 72 0 is_stmt 0 discriminator 1
+ 552 0024 AB42     		cmp	r3, r5
+ 553 0026 F9DB     		blt	.L43
+  74:spo2_algorithm.c ****     
+ 554              		.loc 1 74 0 is_stmt 1
+ 555 0028 2900     		movs	r1, r5
+ 556              	.LVL70:
+ 557 002a FFF7FEFF 		bl	__aeabi_uidiv
+ 558              	.LVL71:
+ 559 002e 0400     		movs	r4, r0
+ 560              	.LVL72:
+  77:spo2_algorithm.c ****     an_x[k] = -1 * (pun_ir_buffer[k] - un_ir_mean); 
+ 561              		.loc 1 77 0
+ 562 0030 0023     		movs	r3, #0
+ 563 0032 05E0     		b	.L44
+ 564              	.LVL73:
+ 565              	.L45:
+  78:spo2_algorithm.c ****     
+ 566              		.loc 1 78 0 discriminator 3
+ 567 0034 9900     		lsls	r1, r3, #2
+ 568 0036 8A59     		ldr	r2, [r1, r6]
+ 569 0038 A21A     		subs	r2, r4, r2
+ 570 003a A248     		ldr	r0, .L84
+ 571 003c 0A50     		str	r2, [r1, r0]
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 17
+
+
+  77:spo2_algorithm.c ****     an_x[k] = -1 * (pun_ir_buffer[k] - un_ir_mean); 
+ 572              		.loc 1 77 0 discriminator 3
+ 573 003e 0133     		adds	r3, r3, #1
+ 574              	.LVL74:
+ 575              	.L44:
+  77:spo2_algorithm.c ****     an_x[k] = -1 * (pun_ir_buffer[k] - un_ir_mean); 
+ 576              		.loc 1 77 0 is_stmt 0 discriminator 1
+ 577 0040 AB42     		cmp	r3, r5
+ 578 0042 F7DB     		blt	.L45
+ 579 0044 0024     		movs	r4, #0
+ 580              	.LVL75:
+ 581 0046 AC46     		mov	ip, r5
+ 582 0048 16E0     		b	.L46
+ 583              	.LVL76:
+ 584              	.L47:
+  82:spo2_algorithm.c ****   }
+ 585              		.loc 1 82 0 is_stmt 1 discriminator 3
+ 586 004a 9E49     		ldr	r1, .L84
+ 587 004c A500     		lsls	r5, r4, #2
+ 588 004e 601C     		adds	r0, r4, #1
+ 589 0050 8300     		lsls	r3, r0, #2
+ 590 0052 5B58     		ldr	r3, [r3, r1]
+ 591 0054 6A58     		ldr	r2, [r5, r1]
+ 592 0056 9046     		mov	r8, r2
+ 593 0058 4344     		add	r3, r3, r8
+ 594 005a A21C     		adds	r2, r4, #2
+ 595 005c 9200     		lsls	r2, r2, #2
+ 596 005e 5258     		ldr	r2, [r2, r1]
+ 597 0060 9B18     		adds	r3, r3, r2
+ 598 0062 0334     		adds	r4, r4, #3
+ 599              	.LVL77:
+ 600 0064 A400     		lsls	r4, r4, #2
+ 601              	.LVL78:
+ 602 0066 6258     		ldr	r2, [r4, r1]
+ 603 0068 9B18     		adds	r3, r3, r2
+ 604 006a DA17     		asrs	r2, r3, #31
+ 605 006c 0324     		movs	r4, #3
+ 606 006e 2240     		ands	r2, r4
+ 607 0070 D318     		adds	r3, r2, r3
+ 608 0072 9B10     		asrs	r3, r3, #2
+ 609 0074 6B50     		str	r3, [r5, r1]
+ 610              	.LVL79:
+  81:spo2_algorithm.c ****     an_x[k] = (an_x[k] + an_x[k+1] + an_x[k+2] + an_x[k+3]) / (int)4;        
+ 611              		.loc 1 81 0 discriminator 3
+ 612 0076 0400     		movs	r4, r0
+ 613              	.LVL80:
+ 614              	.L46:
+  81:spo2_algorithm.c ****     an_x[k] = (an_x[k] + an_x[k+1] + an_x[k+2] + an_x[k+3]) / (int)4;        
+ 615              		.loc 1 81 0 is_stmt 0 discriminator 1
+ 616 0078 5F2C     		cmp	r4, #95
+ 617 007a E6DD     		ble	.L47
+ 618 007c 6546     		mov	r5, ip
+ 619 007e 0020     		movs	r0, #0
+ 620 0080 0023     		movs	r3, #0
+ 621 0082 04E0     		b	.L48
+ 622              	.LVL81:
+ 623              	.L49:
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 18
+
+
+  88:spo2_algorithm.c ****   }
+ 624              		.loc 1 88 0 is_stmt 1 discriminator 3
+ 625 0084 9900     		lsls	r1, r3, #2
+ 626 0086 8F4A     		ldr	r2, .L84
+ 627 0088 8A58     		ldr	r2, [r1, r2]
+ 628 008a 8018     		adds	r0, r0, r2
+ 629              	.LVL82:
+  87:spo2_algorithm.c ****     n_th1 += an_x[k];
+ 630              		.loc 1 87 0 discriminator 3
+ 631 008c 0133     		adds	r3, r3, #1
+ 632              	.LVL83:
+ 633              	.L48:
+  87:spo2_algorithm.c ****     n_th1 += an_x[k];
+ 634              		.loc 1 87 0 is_stmt 0 discriminator 1
+ 635 008e 632B     		cmp	r3, #99
+ 636 0090 F8DD     		ble	.L49
+  90:spo2_algorithm.c ****   if(n_th1 < 30) n_th1 = 30; // min allowed
+ 637              		.loc 1 90 0 is_stmt 1
+ 638 0092 6421     		movs	r1, #100
+ 639 0094 FFF7FEFF 		bl	__aeabi_idiv
+ 640              	.LVL84:
+ 641 0098 0400     		movs	r4, r0
+ 642              	.LVL85:
+  91:spo2_algorithm.c ****   if(n_th1 > 60) n_th1 = 60; // max allowed
+ 643              		.loc 1 91 0
+ 644 009a 1D28     		cmp	r0, #29
+ 645 009c 00DC     		bgt	.L50
+ 646 009e 1E24     		movs	r4, #30
+ 647              	.L50:
+ 648              	.LVL86:
+  92:spo2_algorithm.c **** 
+ 649              		.loc 1 92 0
+ 650 00a0 3C2C     		cmp	r4, #60
+ 651 00a2 00DD     		ble	.L51
+ 652 00a4 3C24     		movs	r4, #60
+ 653              	.LVL87:
+ 654              	.L51:
+  94:spo2_algorithm.c ****   
+ 655              		.loc 1 94 0
+ 656 00a6 0023     		movs	r3, #0
+ 657 00a8 04E0     		b	.L52
+ 658              	.LVL88:
+ 659              	.L53:
+  94:spo2_algorithm.c ****   
+ 660              		.loc 1 94 0 is_stmt 0 discriminator 3
+ 661 00aa 9900     		lsls	r1, r3, #2
+ 662 00ac 0020     		movs	r0, #0
+ 663 00ae 12AA     		add	r2, sp, #72
+ 664 00b0 8850     		str	r0, [r1, r2]
+ 665 00b2 0133     		adds	r3, r3, #1
+ 666              	.LVL89:
+ 667              	.L52:
+  94:spo2_algorithm.c ****   
+ 668              		.loc 1 94 0 discriminator 1
+ 669 00b4 0E2B     		cmp	r3, #14
+ 670 00b6 F8DD     		ble	.L53
+  97:spo2_algorithm.c ****   
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 19
+
+
+ 671              		.loc 1 97 0 is_stmt 1
+ 672 00b8 0F23     		movs	r3, #15
+ 673              	.LVL90:
+ 674 00ba 0293     		str	r3, [sp, #8]
+ 675 00bc 0B3B     		subs	r3, r3, #11
+ 676 00be 0193     		str	r3, [sp, #4]
+ 677 00c0 0094     		str	r4, [sp]
+ 678 00c2 6033     		adds	r3, r3, #96
+ 679 00c4 7F4A     		ldr	r2, .L84
+ 680 00c6 21A9     		add	r1, sp, #132
+ 681 00c8 12A8     		add	r0, sp, #72
+ 682 00ca FFF7FEFF 		bl	maxim_find_peaks
+ 683              	.LVL91:
+ 100:spo2_algorithm.c ****     for (k = 1; k < n_npks; k++) 
+ 684              		.loc 1 100 0
+ 685 00ce 219B     		ldr	r3, [sp, #132]
+ 686 00d0 012B     		cmp	r3, #1
+ 687 00d2 0ADC     		bgt	.L79
+ 688 00d4 21E0     		b	.L83
+ 689              	.LVL92:
+ 690              	.L56:
+ 102:spo2_algorithm.c ****     n_peak_interval_sum = n_peak_interval_sum / (n_npks - 1);
+ 691              		.loc 1 102 0 discriminator 3
+ 692 00d6 12A8     		add	r0, sp, #72
+ 693 00d8 8B00     		lsls	r3, r1, #2
+ 694 00da 1B58     		ldr	r3, [r3, r0]
+ 695 00dc 4A1E     		subs	r2, r1, #1
+ 696 00de 9200     		lsls	r2, r2, #2
+ 697 00e0 1258     		ldr	r2, [r2, r0]
+ 698 00e2 9B1A     		subs	r3, r3, r2
+ 699 00e4 E418     		adds	r4, r4, r3
+ 700              	.LVL93:
+ 101:spo2_algorithm.c ****       n_peak_interval_sum += (an_ir_valley_locs[k] - an_ir_valley_locs[k-1]);
+ 701              		.loc 1 101 0 discriminator 3
+ 702 00e6 0131     		adds	r1, r1, #1
+ 703              	.LVL94:
+ 704 00e8 03E0     		b	.L54
+ 705              	.LVL95:
+ 706              	.L79:
+ 707 00ea 0024     		movs	r4, #0
+ 708              	.LVL96:
+ 709 00ec 0121     		movs	r1, #1
+ 710 00ee AC46     		mov	ip, r5
+ 711 00f0 1D00     		movs	r5, r3
+ 712              	.LVL97:
+ 713              	.L54:
+ 101:spo2_algorithm.c ****       n_peak_interval_sum += (an_ir_valley_locs[k] - an_ir_valley_locs[k-1]);
+ 714              		.loc 1 101 0 is_stmt 0 discriminator 1
+ 715 00f2 A942     		cmp	r1, r5
+ 716 00f4 EFDB     		blt	.L56
+ 717 00f6 A846     		mov	r8, r5
+ 718 00f8 6546     		mov	r5, ip
+ 103:spo2_algorithm.c ****     *pn_heart_rate = (int32_t)((FreqS * 60) / n_peak_interval_sum);
+ 719              		.loc 1 103 0 is_stmt 1
+ 720 00fa 4146     		mov	r1, r8
+ 721              	.LVL98:
+ 722 00fc 0139     		subs	r1, r1, #1
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 20
+
+
+ 723 00fe 2000     		movs	r0, r4
+ 724 0100 FFF7FEFF 		bl	__aeabi_idiv
+ 725              	.LVL99:
+ 726 0104 0100     		movs	r1, r0
+ 727              	.LVL100:
+ 104:spo2_algorithm.c ****     *pch_hr_valid = 1;
+ 728              		.loc 1 104 0
+ 729 0106 7048     		ldr	r0, .L84+4
+ 730              	.LVL101:
+ 731 0108 FFF7FEFF 		bl	__aeabi_idiv
+ 732              	.LVL102:
+ 733 010c 2D9B     		ldr	r3, [sp, #180]
+ 734 010e 1860     		str	r0, [r3]
+ 105:spo2_algorithm.c ****   }
+ 735              		.loc 1 105 0
+ 736 0110 0123     		movs	r3, #1
+ 737 0112 2E9A     		ldr	r2, [sp, #184]
+ 738 0114 1370     		strb	r3, [r2]
+ 739              	.L58:
+ 740 0116 0022     		movs	r2, #0
+ 741 0118 0EE0     		b	.L57
+ 742              	.LVL103:
+ 743              	.L83:
+ 108:spo2_algorithm.c ****     *pch_hr_valid = 0;
+ 744              		.loc 1 108 0
+ 745 011a 6C4B     		ldr	r3, .L84+8
+ 746 011c 2D9A     		ldr	r2, [sp, #180]
+ 747 011e 1360     		str	r3, [r2]
+ 109:spo2_algorithm.c ****   }
+ 748              		.loc 1 109 0
+ 749 0120 0023     		movs	r3, #0
+ 750 0122 2E9A     		ldr	r2, [sp, #184]
+ 751 0124 1370     		strb	r3, [r2]
+ 752 0126 F6E7     		b	.L58
+ 753              	.LVL104:
+ 754              	.L59:
+ 114:spo2_algorithm.c ****     an_y[k] = pun_red_buffer[k]; 
+ 755              		.loc 1 114 0 discriminator 3
+ 756 0128 9300     		lsls	r3, r2, #2
+ 757 012a 6649     		ldr	r1, .L84
+ 758 012c F058     		ldr	r0, [r6, r3]
+ 759 012e 5850     		str	r0, [r3, r1]
+ 115:spo2_algorithm.c ****   }
+ 760              		.loc 1 115 0 discriminator 3
+ 761 0130 6749     		ldr	r1, .L84+12
+ 762 0132 F858     		ldr	r0, [r7, r3]
+ 763 0134 5850     		str	r0, [r3, r1]
+ 113:spo2_algorithm.c ****     an_x[k] = pun_ir_buffer[k]; 
+ 764              		.loc 1 113 0 discriminator 3
+ 765 0136 0132     		adds	r2, r2, #1
+ 766              	.LVL105:
+ 767              	.L57:
+ 113:spo2_algorithm.c ****     an_x[k] = pun_ir_buffer[k]; 
+ 768              		.loc 1 113 0 is_stmt 0 discriminator 1
+ 769 0138 AA42     		cmp	r2, r5
+ 770 013a F5DB     		blt	.L59
+ 119:spo2_algorithm.c ****   
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 21
+
+
+ 771              		.loc 1 119 0 is_stmt 1
+ 772 013c 219B     		ldr	r3, [sp, #132]
+ 773 013e 9946     		mov	r9, r3
+ 774              	.LVL106:
+ 125:spo2_algorithm.c ****   
+ 775              		.loc 1 125 0
+ 776 0140 0023     		movs	r3, #0
+ 777              	.LVL107:
+ 778 0142 04E0     		b	.L60
+ 779              	.LVL108:
+ 780              	.L61:
+ 125:spo2_algorithm.c ****   
+ 781              		.loc 1 125 0 is_stmt 0 discriminator 3
+ 782 0144 9900     		lsls	r1, r3, #2
+ 783 0146 0020     		movs	r0, #0
+ 784 0148 0DAA     		add	r2, sp, #52
+ 785 014a 8850     		str	r0, [r1, r2]
+ 786 014c 0133     		adds	r3, r3, #1
+ 787              	.LVL109:
+ 788              	.L60:
+ 125:spo2_algorithm.c ****   
+ 789              		.loc 1 125 0 discriminator 1
+ 790 014e 042B     		cmp	r3, #4
+ 791 0150 F8DD     		ble	.L61
+ 792 0152 0023     		movs	r3, #0
+ 793              	.LVL110:
+ 794 0154 4846     		mov	r0, r9
+ 795 0156 0CE0     		b	.L62
+ 796              	.LVL111:
+ 797              	.L65:
+ 128:spo2_algorithm.c ****       *pn_spo2 = -999; // do not use SPO2 since valley loc is out of range
+ 798              		.loc 1 128 0 is_stmt 1
+ 799 0158 9A00     		lsls	r2, r3, #2
+ 800 015a 12A9     		add	r1, sp, #72
+ 801 015c 5258     		ldr	r2, [r2, r1]
+ 802 015e 642A     		cmp	r2, #100
+ 803 0160 06DD     		ble	.L63
+ 129:spo2_algorithm.c ****       *pch_spo2_valid = 0; 
+ 804              		.loc 1 129 0
+ 805 0162 5A4B     		ldr	r3, .L84+8
+ 806              	.LVL112:
+ 807 0164 0B9A     		ldr	r2, [sp, #44]
+ 808 0166 1360     		str	r3, [r2]
+ 130:spo2_algorithm.c ****       return;
+ 809              		.loc 1 130 0
+ 810 0168 0023     		movs	r3, #0
+ 811 016a 2C9A     		ldr	r2, [sp, #176]
+ 812 016c 1370     		strb	r3, [r2]
+ 813 016e A2E0     		b	.L41
+ 814              	.LVL113:
+ 815              	.L63:
+ 127:spo2_algorithm.c ****     if (an_ir_valley_locs[k] > BUFFER_SIZE){
+ 816              		.loc 1 127 0 discriminator 2
+ 817 0170 0133     		adds	r3, r3, #1
+ 818              	.LVL114:
+ 819              	.L62:
+ 127:spo2_algorithm.c ****     if (an_ir_valley_locs[k] > BUFFER_SIZE){
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 22
+
+
+ 820              		.loc 1 127 0 is_stmt 0 discriminator 1
+ 821 0172 8342     		cmp	r3, r0
+ 822 0174 F0DB     		blt	.L65
+ 823 0176 0023     		movs	r3, #0
+ 824              	.LVL115:
+ 825 0178 1E00     		movs	r6, r3
+ 826              	.LVL116:
+ 827 017a 0027     		movs	r7, #0
+ 828              	.LVL117:
+ 829 017c 0A93     		str	r3, [sp, #40]
+ 830 017e 0790     		str	r0, [sp, #28]
+ 831 0180 6BE0     		b	.L66
+ 832              	.LVL118:
+ 833              	.L72:
+ 141:spo2_algorithm.c ****       for (i = an_ir_valley_locs[k]; i < an_ir_valley_locs[k+1]; i++){
+ 834              		.loc 1 141 0 is_stmt 1
+ 835 0182 5A1C     		adds	r2, r3, #1
+ 836 0184 1100     		movs	r1, r2
+ 837 0186 0592     		str	r2, [sp, #20]
+ 838 0188 12AA     		add	r2, sp, #72
+ 839 018a 8900     		lsls	r1, r1, #2
+ 840 018c 8958     		ldr	r1, [r1, r2]
+ 841 018e 9B00     		lsls	r3, r3, #2
+ 842              	.LVL119:
+ 843 0190 9B58     		ldr	r3, [r3, r2]
+ 844 0192 9946     		mov	r9, r3
+ 845 0194 CB1A     		subs	r3, r1, r3
+ 846 0196 0693     		str	r3, [sp, #24]
+ 847 0198 032B     		cmp	r3, #3
+ 848 019a 10DC     		bgt	.L80
+ 849 019c 5CE0     		b	.L68
+ 850              	.LVL120:
+ 851              	.L71:
+ 143:spo2_algorithm.c ****         if (an_y[i] > n_y_dc_max) {n_y_dc_max = an_y[i]; n_y_dc_max_idx = i;}
+ 852              		.loc 1 143 0
+ 853 019e 9A00     		lsls	r2, r3, #2
+ 854 01a0 4848     		ldr	r0, .L84
+ 855 01a2 1258     		ldr	r2, [r2, r0]
+ 856 01a4 9442     		cmp	r4, r2
+ 857 01a6 01DA     		bge	.L69
+ 858 01a8 1E00     		movs	r6, r3
+ 859              	.LVL121:
+ 860 01aa 1400     		movs	r4, r2
+ 861              	.LVL122:
+ 862              	.L69:
+ 144:spo2_algorithm.c ****       }
+ 863              		.loc 1 144 0
+ 864 01ac 9A00     		lsls	r2, r3, #2
+ 865 01ae 4848     		ldr	r0, .L84+12
+ 866 01b0 1258     		ldr	r2, [r2, r0]
+ 867 01b2 9542     		cmp	r5, r2
+ 868 01b4 01DA     		bge	.L70
+ 869 01b6 1F00     		movs	r7, r3
+ 870              	.LVL123:
+ 871 01b8 1500     		movs	r5, r2
+ 872              	.LVL124:
+ 873              	.L70:
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 23
+
+
+ 142:spo2_algorithm.c ****         if (an_x[i] > n_x_dc_max) {n_x_dc_max = an_x[i]; n_x_dc_max_idx = i;}
+ 874              		.loc 1 142 0 discriminator 2
+ 875 01ba 0133     		adds	r3, r3, #1
+ 876              	.LVL125:
+ 877 01bc 03E0     		b	.L67
+ 878              	.LVL126:
+ 879              	.L80:
+ 880 01be 4B46     		mov	r3, r9
+ 881 01c0 FF24     		movs	r4, #255
+ 882 01c2 2406     		lsls	r4, r4, #24
+ 883 01c4 2500     		movs	r5, r4
+ 884              	.LVL127:
+ 885              	.L67:
+ 142:spo2_algorithm.c ****         if (an_x[i] > n_x_dc_max) {n_x_dc_max = an_x[i]; n_x_dc_max_idx = i;}
+ 886              		.loc 1 142 0 is_stmt 0 discriminator 1
+ 887 01c6 8B42     		cmp	r3, r1
+ 888 01c8 E9DB     		blt	.L71
+ 147:spo2_algorithm.c ****       n_y_ac = an_y[an_ir_valley_locs[k]] + n_y_ac / (an_ir_valley_locs[k+1] - an_ir_valley_locs[k]
+ 889              		.loc 1 147 0 is_stmt 1
+ 890 01ca 414B     		ldr	r3, .L84+12
+ 891              	.LVL128:
+ 892 01cc 9A46     		mov	r10, r3
+ 893 01ce 8B00     		lsls	r3, r1, #2
+ 894 01d0 9846     		mov	r8, r3
+ 895 01d2 4B46     		mov	r3, r9
+ 896 01d4 9B00     		lsls	r3, r3, #2
+ 897 01d6 5246     		mov	r2, r10
+ 898 01d8 0993     		str	r3, [sp, #36]
+ 899 01da 9A58     		ldr	r2, [r3, r2]
+ 900 01dc 9346     		mov	fp, r2
+ 901 01de 5246     		mov	r2, r10
+ 902 01e0 4146     		mov	r1, r8
+ 903 01e2 8A58     		ldr	r2, [r1, r2]
+ 904 01e4 5946     		mov	r1, fp
+ 905 01e6 501A     		subs	r0, r2, r1
+ 906 01e8 4A46     		mov	r2, r9
+ 907 01ea BB1A     		subs	r3, r7, r2
+ 908 01ec 5843     		muls	r0, r3
+ 909              	.LVL129:
+ 148:spo2_algorithm.c ****       n_y_ac = an_y[n_y_dc_max_idx] - n_y_ac; // subtracting linear DC components from raw 
+ 910              		.loc 1 148 0
+ 911 01ee 0699     		ldr	r1, [sp, #24]
+ 912 01f0 FFF7FEFF 		bl	__aeabi_idiv
+ 913              	.LVL130:
+ 914 01f4 5844     		add	r0, r0, fp
+ 915              	.LVL131:
+ 149:spo2_algorithm.c ****       
+ 916              		.loc 1 149 0
+ 917 01f6 BA00     		lsls	r2, r7, #2
+ 918 01f8 9346     		mov	fp, r2
+ 919 01fa 5246     		mov	r2, r10
+ 920 01fc 5946     		mov	r1, fp
+ 921 01fe 8B58     		ldr	r3, [r1, r2]
+ 922 0200 1A1A     		subs	r2, r3, r0
+ 923 0202 0892     		str	r2, [sp, #32]
+ 924              	.LVL132:
+ 151:spo2_algorithm.c ****       n_x_ac = an_x[an_ir_valley_locs[k]] + n_x_ac / (an_ir_valley_locs[k+1] - an_ir_valley_locs[k]
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 24
+
+
+ 925              		.loc 1 151 0
+ 926 0204 2F48     		ldr	r0, .L84
+ 927 0206 8246     		mov	r10, r0
+ 928 0208 4146     		mov	r1, r8
+ 929 020a 0858     		ldr	r0, [r1, r0]
+ 930 020c 5146     		mov	r1, r10
+ 931 020e 099B     		ldr	r3, [sp, #36]
+ 932 0210 5B58     		ldr	r3, [r3, r1]
+ 933 0212 9846     		mov	r8, r3
+ 934 0214 C01A     		subs	r0, r0, r3
+ 935 0216 4B46     		mov	r3, r9
+ 936 0218 F31A     		subs	r3, r6, r3
+ 937 021a 5843     		muls	r0, r3
+ 938              	.LVL133:
+ 152:spo2_algorithm.c ****       n_x_ac = an_x[n_y_dc_max_idx] - n_x_ac; // subtracting linear DC components from raw 
+ 939              		.loc 1 152 0
+ 940 021c 0699     		ldr	r1, [sp, #24]
+ 941 021e FFF7FEFF 		bl	__aeabi_idiv
+ 942              	.LVL134:
+ 943 0222 4044     		add	r0, r0, r8
+ 944              	.LVL135:
+ 153:spo2_algorithm.c ****       
+ 945              		.loc 1 153 0
+ 946 0224 5346     		mov	r3, r10
+ 947 0226 5946     		mov	r1, fp
+ 948 0228 CB58     		ldr	r3, [r1, r3]
+ 949 022a 191A     		subs	r1, r3, r0
+ 950              	.LVL136:
+ 155:spo2_algorithm.c ****       n_denom = (n_x_ac * n_y_dc_max) >> 7;
+ 951              		.loc 1 155 0
+ 952 022c 089A     		ldr	r2, [sp, #32]
+ 953 022e 5443     		muls	r4, r2
+ 954              	.LVL137:
+ 955 0230 E411     		asrs	r4, r4, #7
+ 956              	.LVL138:
+ 156:spo2_algorithm.c ****       
+ 957              		.loc 1 156 0
+ 958 0232 4D43     		muls	r5, r1
+ 959              	.LVL139:
+ 960 0234 E911     		asrs	r1, r5, #7
+ 961              	.LVL140:
+ 158:spo2_algorithm.c ****       {   
+ 962              		.loc 1 158 0
+ 963 0236 0029     		cmp	r1, #0
+ 964 0238 0EDD     		ble	.L68
+ 158:spo2_algorithm.c ****       {   
+ 965              		.loc 1 158 0 is_stmt 0 discriminator 1
+ 966 023a 0A9D     		ldr	r5, [sp, #40]
+ 967 023c 042D     		cmp	r5, #4
+ 968 023e 0BDC     		bgt	.L68
+ 158:spo2_algorithm.c ****       {   
+ 969              		.loc 1 158 0 discriminator 2
+ 970 0240 002C     		cmp	r4, #0
+ 971 0242 09D0     		beq	.L68
+ 160:spo2_algorithm.c ****         n_i_ratio_count++;
+ 972              		.loc 1 160 0 is_stmt 1
+ 973 0244 6420     		movs	r0, #100
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 25
+
+
+ 974              	.LVL141:
+ 975 0246 6043     		muls	r0, r4
+ 976 0248 FFF7FEFF 		bl	__aeabi_idiv
+ 977              	.LVL142:
+ 978 024c AA00     		lsls	r2, r5, #2
+ 979 024e 0DAB     		add	r3, sp, #52
+ 980 0250 D050     		str	r0, [r2, r3]
+ 161:spo2_algorithm.c ****       }
+ 981              		.loc 1 161 0
+ 982 0252 2B00     		movs	r3, r5
+ 983 0254 0133     		adds	r3, r3, #1
+ 984 0256 0A93     		str	r3, [sp, #40]
+ 985              	.LVL143:
+ 986              	.L68:
+ 987 0258 059B     		ldr	r3, [sp, #20]
+ 988              	.LVL144:
+ 989              	.L66:
+ 137:spo2_algorithm.c ****     n_y_dc_max = -16777216; 
+ 990              		.loc 1 137 0 discriminator 1
+ 991 025a 079A     		ldr	r2, [sp, #28]
+ 992 025c 013A     		subs	r2, r2, #1
+ 993 025e 9342     		cmp	r3, r2
+ 994 0260 8FDB     		blt	.L72
+ 167:spo2_algorithm.c ****   n_middle_idx = n_i_ratio_count / 2;
+ 995              		.loc 1 167 0
+ 996 0262 0A9C     		ldr	r4, [sp, #40]
+ 997 0264 2100     		movs	r1, r4
+ 998 0266 0DA8     		add	r0, sp, #52
+ 999 0268 FFF7FEFF 		bl	maxim_sort_ascend
+ 1000              	.LVL145:
+ 168:spo2_algorithm.c **** 
+ 1001              		.loc 1 168 0
+ 1002 026c E30F     		lsrs	r3, r4, #31
+ 1003 026e A446     		mov	ip, r4
+ 1004 0270 6344     		add	r3, r3, ip
+ 1005 0272 5B10     		asrs	r3, r3, #1
+ 1006              	.LVL146:
+ 170:spo2_algorithm.c ****     n_ratio_average = (an_ratio[n_middle_idx-1] + an_ratio[n_middle_idx]) / 2; // use median
+ 1007              		.loc 1 170 0
+ 1008 0274 012B     		cmp	r3, #1
+ 1009 0276 0ADD     		ble	.L73
+ 171:spo2_algorithm.c ****   else
+ 1010              		.loc 1 171 0
+ 1011 0278 5A1E     		subs	r2, r3, #1
+ 1012 027a 0DA9     		add	r1, sp, #52
+ 1013 027c 9200     		lsls	r2, r2, #2
+ 1014 027e 5258     		ldr	r2, [r2, r1]
+ 1015 0280 9B00     		lsls	r3, r3, #2
+ 1016              	.LVL147:
+ 1017 0282 5B58     		ldr	r3, [r3, r1]
+ 1018 0284 D318     		adds	r3, r2, r3
+ 1019 0286 DA0F     		lsrs	r2, r3, #31
+ 1020 0288 D318     		adds	r3, r2, r3
+ 1021 028a 5B10     		asrs	r3, r3, #1
+ 1022              	.LVL148:
+ 1023 028c 02E0     		b	.L74
+ 1024              	.LVL149:
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 26
+
+
+ 1025              	.L73:
+ 173:spo2_algorithm.c **** 
+ 1026              		.loc 1 173 0
+ 1027 028e 9B00     		lsls	r3, r3, #2
+ 1028              	.LVL150:
+ 1029 0290 0DAA     		add	r2, sp, #52
+ 1030 0292 9B58     		ldr	r3, [r3, r2]
+ 1031              	.LVL151:
+ 1032              	.L74:
+ 175:spo2_algorithm.c ****     n_spo2_calc = uch_spo2_table[n_ratio_average];
+ 1033              		.loc 1 175 0
+ 1034 0294 DA1E     		subs	r2, r3, #3
+ 1035 0296 B42A     		cmp	r2, #180
+ 1036 0298 07D8     		bhi	.L75
+ 176:spo2_algorithm.c ****     *pn_spo2 = n_spo2_calc;
+ 1037              		.loc 1 176 0
+ 1038 029a 0E4A     		ldr	r2, .L84+16
+ 1039 029c D35C     		ldrb	r3, [r2, r3]
+ 1040              	.LVL152:
+ 177:spo2_algorithm.c ****     *pch_spo2_valid = 1; // float_SPO2 = -45.060*n_ratio_average*n_ratio_average/10000 + 30.354*n_r
+ 1041              		.loc 1 177 0
+ 1042 029e 0B9A     		ldr	r2, [sp, #44]
+ 1043 02a0 1360     		str	r3, [r2]
+ 178:spo2_algorithm.c ****   }
+ 1044              		.loc 1 178 0
+ 1045 02a2 0123     		movs	r3, #1
+ 1046              	.LVL153:
+ 1047 02a4 2C9A     		ldr	r2, [sp, #176]
+ 1048              	.LVL154:
+ 1049 02a6 1370     		strb	r3, [r2]
+ 1050              	.LVL155:
+ 1051 02a8 05E0     		b	.L41
+ 1052              	.LVL156:
+ 1053              	.L75:
+ 181:spo2_algorithm.c ****     *pch_spo2_valid = 0; 
+ 1054              		.loc 1 181 0
+ 1055 02aa 084B     		ldr	r3, .L84+8
+ 1056              	.LVL157:
+ 1057 02ac 0B9A     		ldr	r2, [sp, #44]
+ 1058              	.LVL158:
+ 1059 02ae 1360     		str	r3, [r2]
+ 182:spo2_algorithm.c ****   }
+ 1060              		.loc 1 182 0
+ 1061 02b0 0023     		movs	r3, #0
+ 1062 02b2 2C9A     		ldr	r2, [sp, #176]
+ 1063 02b4 1370     		strb	r3, [r2]
+ 1064              	.LVL159:
+ 1065              	.L41:
+ 184:spo2_algorithm.c **** 
+ 1066              		.loc 1 184 0
+ 1067 02b6 23B0     		add	sp, sp, #140
+ 1068              		@ sp needed
+ 1069 02b8 3CBC     		pop	{r2, r3, r4, r5}
+ 1070 02ba 9046     		mov	r8, r2
+ 1071 02bc 9946     		mov	r9, r3
+ 1072 02be A246     		mov	r10, r4
+ 1073 02c0 AB46     		mov	fp, r5
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 27
+
+
+ 1074 02c2 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 1075              	.L85:
+ 1076              		.align	2
+ 1077              	.L84:
+ 1078 02c4 00000000 		.word	an_x
+ 1079 02c8 DC050000 		.word	1500
+ 1080 02cc 19FCFFFF 		.word	-999
+ 1081 02d0 00000000 		.word	an_y
+ 1082 02d4 00000000 		.word	.LANCHOR0
+ 1083              		.cfi_endproc
+ 1084              	.LFE32:
+ 1085              		.size	maxim_heart_rate_and_oxygen_saturation, .-maxim_heart_rate_and_oxygen_saturation
+ 1086              		.global	uch_spo2_table
+ 1087              		.comm	an_y,400,4
+ 1088              		.comm	an_x,400,4
+ 1089              		.section	.rodata
+ 1090              		.align	2
+ 1091              		.set	.LANCHOR0,. + 0
+ 1092              		.type	uch_spo2_table, %object
+ 1093              		.size	uch_spo2_table, 184
+ 1094              	uch_spo2_table:
+ 1095 0000 5F       		.byte	95
+ 1096 0001 5F       		.byte	95
+ 1097 0002 5F       		.byte	95
+ 1098 0003 60       		.byte	96
+ 1099 0004 60       		.byte	96
+ 1100 0005 60       		.byte	96
+ 1101 0006 61       		.byte	97
+ 1102 0007 61       		.byte	97
+ 1103 0008 61       		.byte	97
+ 1104 0009 61       		.byte	97
+ 1105 000a 61       		.byte	97
+ 1106 000b 62       		.byte	98
+ 1107 000c 62       		.byte	98
+ 1108 000d 62       		.byte	98
+ 1109 000e 62       		.byte	98
+ 1110 000f 62       		.byte	98
+ 1111 0010 63       		.byte	99
+ 1112 0011 63       		.byte	99
+ 1113 0012 63       		.byte	99
+ 1114 0013 63       		.byte	99
+ 1115 0014 63       		.byte	99
+ 1116 0015 63       		.byte	99
+ 1117 0016 63       		.byte	99
+ 1118 0017 63       		.byte	99
+ 1119 0018 64       		.byte	100
+ 1120 0019 64       		.byte	100
+ 1121 001a 64       		.byte	100
+ 1122 001b 64       		.byte	100
+ 1123 001c 64       		.byte	100
+ 1124 001d 64       		.byte	100
+ 1125 001e 64       		.byte	100
+ 1126 001f 64       		.byte	100
+ 1127 0020 64       		.byte	100
+ 1128 0021 64       		.byte	100
+ 1129 0022 64       		.byte	100
+ 1130 0023 64       		.byte	100
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 28
+
+
+ 1131 0024 64       		.byte	100
+ 1132 0025 64       		.byte	100
+ 1133 0026 64       		.byte	100
+ 1134 0027 64       		.byte	100
+ 1135 0028 64       		.byte	100
+ 1136 0029 64       		.byte	100
+ 1137 002a 64       		.byte	100
+ 1138 002b 64       		.byte	100
+ 1139 002c 63       		.byte	99
+ 1140 002d 63       		.byte	99
+ 1141 002e 63       		.byte	99
+ 1142 002f 63       		.byte	99
+ 1143 0030 63       		.byte	99
+ 1144 0031 63       		.byte	99
+ 1145 0032 63       		.byte	99
+ 1146 0033 63       		.byte	99
+ 1147 0034 62       		.byte	98
+ 1148 0035 62       		.byte	98
+ 1149 0036 62       		.byte	98
+ 1150 0037 62       		.byte	98
+ 1151 0038 62       		.byte	98
+ 1152 0039 62       		.byte	98
+ 1153 003a 61       		.byte	97
+ 1154 003b 61       		.byte	97
+ 1155 003c 61       		.byte	97
+ 1156 003d 61       		.byte	97
+ 1157 003e 60       		.byte	96
+ 1158 003f 60       		.byte	96
+ 1159 0040 60       		.byte	96
+ 1160 0041 60       		.byte	96
+ 1161 0042 5F       		.byte	95
+ 1162 0043 5F       		.byte	95
+ 1163 0044 5F       		.byte	95
+ 1164 0045 5E       		.byte	94
+ 1165 0046 5E       		.byte	94
+ 1166 0047 5E       		.byte	94
+ 1167 0048 5D       		.byte	93
+ 1168 0049 5D       		.byte	93
+ 1169 004a 5D       		.byte	93
+ 1170 004b 5C       		.byte	92
+ 1171 004c 5C       		.byte	92
+ 1172 004d 5C       		.byte	92
+ 1173 004e 5B       		.byte	91
+ 1174 004f 5B       		.byte	91
+ 1175 0050 5A       		.byte	90
+ 1176 0051 5A       		.byte	90
+ 1177 0052 59       		.byte	89
+ 1178 0053 59       		.byte	89
+ 1179 0054 59       		.byte	89
+ 1180 0055 58       		.byte	88
+ 1181 0056 58       		.byte	88
+ 1182 0057 57       		.byte	87
+ 1183 0058 57       		.byte	87
+ 1184 0059 56       		.byte	86
+ 1185 005a 56       		.byte	86
+ 1186 005b 55       		.byte	85
+ 1187 005c 55       		.byte	85
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 29
+
+
+ 1188 005d 54       		.byte	84
+ 1189 005e 54       		.byte	84
+ 1190 005f 53       		.byte	83
+ 1191 0060 52       		.byte	82
+ 1192 0061 52       		.byte	82
+ 1193 0062 51       		.byte	81
+ 1194 0063 51       		.byte	81
+ 1195 0064 50       		.byte	80
+ 1196 0065 50       		.byte	80
+ 1197 0066 4F       		.byte	79
+ 1198 0067 4E       		.byte	78
+ 1199 0068 4E       		.byte	78
+ 1200 0069 4D       		.byte	77
+ 1201 006a 4C       		.byte	76
+ 1202 006b 4C       		.byte	76
+ 1203 006c 4B       		.byte	75
+ 1204 006d 4A       		.byte	74
+ 1205 006e 4A       		.byte	74
+ 1206 006f 49       		.byte	73
+ 1207 0070 48       		.byte	72
+ 1208 0071 48       		.byte	72
+ 1209 0072 47       		.byte	71
+ 1210 0073 46       		.byte	70
+ 1211 0074 45       		.byte	69
+ 1212 0075 45       		.byte	69
+ 1213 0076 44       		.byte	68
+ 1214 0077 43       		.byte	67
+ 1215 0078 42       		.byte	66
+ 1216 0079 42       		.byte	66
+ 1217 007a 41       		.byte	65
+ 1218 007b 40       		.byte	64
+ 1219 007c 3F       		.byte	63
+ 1220 007d 3E       		.byte	62
+ 1221 007e 3E       		.byte	62
+ 1222 007f 3D       		.byte	61
+ 1223 0080 3C       		.byte	60
+ 1224 0081 3B       		.byte	59
+ 1225 0082 3A       		.byte	58
+ 1226 0083 39       		.byte	57
+ 1227 0084 38       		.byte	56
+ 1228 0085 38       		.byte	56
+ 1229 0086 37       		.byte	55
+ 1230 0087 36       		.byte	54
+ 1231 0088 35       		.byte	53
+ 1232 0089 34       		.byte	52
+ 1233 008a 33       		.byte	51
+ 1234 008b 32       		.byte	50
+ 1235 008c 31       		.byte	49
+ 1236 008d 30       		.byte	48
+ 1237 008e 2F       		.byte	47
+ 1238 008f 2E       		.byte	46
+ 1239 0090 2D       		.byte	45
+ 1240 0091 2C       		.byte	44
+ 1241 0092 2B       		.byte	43
+ 1242 0093 2A       		.byte	42
+ 1243 0094 29       		.byte	41
+ 1244 0095 28       		.byte	40
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 30
+
+
+ 1245 0096 27       		.byte	39
+ 1246 0097 26       		.byte	38
+ 1247 0098 25       		.byte	37
+ 1248 0099 24       		.byte	36
+ 1249 009a 23       		.byte	35
+ 1250 009b 22       		.byte	34
+ 1251 009c 21       		.byte	33
+ 1252 009d 1F       		.byte	31
+ 1253 009e 1E       		.byte	30
+ 1254 009f 1D       		.byte	29
+ 1255 00a0 1C       		.byte	28
+ 1256 00a1 1B       		.byte	27
+ 1257 00a2 1A       		.byte	26
+ 1258 00a3 19       		.byte	25
+ 1259 00a4 17       		.byte	23
+ 1260 00a5 16       		.byte	22
+ 1261 00a6 15       		.byte	21
+ 1262 00a7 14       		.byte	20
+ 1263 00a8 13       		.byte	19
+ 1264 00a9 11       		.byte	17
+ 1265 00aa 10       		.byte	16
+ 1266 00ab 0F       		.byte	15
+ 1267 00ac 0E       		.byte	14
+ 1268 00ad 0C       		.byte	12
+ 1269 00ae 0B       		.byte	11
+ 1270 00af 0A       		.byte	10
+ 1271 00b0 09       		.byte	9
+ 1272 00b1 07       		.byte	7
+ 1273 00b2 06       		.byte	6
+ 1274 00b3 05       		.byte	5
+ 1275 00b4 03       		.byte	3
+ 1276 00b5 02       		.byte	2
+ 1277 00b6 01       		.byte	1
+ 1278 00b7 00       		.space	1
+ 1279              		.text
+ 1280              	.Letext0:
+ 1281              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\4.4\\psoc creator\\import\\gnu\\arm\\5.4.
+ 1282              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\4.4\\psoc creator\\import\\gnu\\arm\\5.4.
+ 1283              		.section	.debug_info,"",%progbits
+ 1284              	.Ldebug_info0:
+ 1285 0000 4B060000 		.4byte	0x64b
+ 1286 0004 0400     		.2byte	0x4
+ 1287 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 1288 000a 04       		.byte	0x4
+ 1289 000b 01       		.uleb128 0x1
+ 1290 000c CC000000 		.4byte	.LASF69
+ 1291 0010 0C       		.byte	0xc
+ 1292 0011 5E000000 		.4byte	.LASF70
+ 1293 0015 CF020000 		.4byte	.LASF71
+ 1294 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 1295 001d 00000000 		.4byte	0
+ 1296 0021 00000000 		.4byte	.Ldebug_line0
+ 1297 0025 02       		.uleb128 0x2
+ 1298 0026 37030000 		.4byte	.LASF0
+ 1299 002a 02       		.byte	0x2
+ 1300 002b 1B       		.byte	0x1b
+ 1301 002c 30000000 		.4byte	0x30
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 31
+
+
+ 1302 0030 03       		.uleb128 0x3
+ 1303 0031 01       		.byte	0x1
+ 1304 0032 06       		.byte	0x6
+ 1305 0033 EA030000 		.4byte	.LASF2
+ 1306 0037 02       		.uleb128 0x2
+ 1307 0038 58040000 		.4byte	.LASF1
+ 1308 003c 02       		.byte	0x2
+ 1309 003d 1D       		.byte	0x1d
+ 1310 003e 42000000 		.4byte	0x42
+ 1311 0042 03       		.uleb128 0x3
+ 1312 0043 01       		.byte	0x1
+ 1313 0044 08       		.byte	0x8
+ 1314 0045 5D020000 		.4byte	.LASF3
+ 1315 0049 03       		.uleb128 0x3
+ 1316 004a 02       		.byte	0x2
+ 1317 004b 05       		.byte	0x5
+ 1318 004c 2D000000 		.4byte	.LASF4
+ 1319 0050 03       		.uleb128 0x3
+ 1320 0051 02       		.byte	0x2
+ 1321 0052 07       		.byte	0x7
+ 1322 0053 55030000 		.4byte	.LASF5
+ 1323 0057 02       		.uleb128 0x2
+ 1324 0058 D6030000 		.4byte	.LASF6
+ 1325 005c 02       		.byte	0x2
+ 1326 005d 3F       		.byte	0x3f
+ 1327 005e 62000000 		.4byte	0x62
+ 1328 0062 03       		.uleb128 0x3
+ 1329 0063 04       		.byte	0x4
+ 1330 0064 05       		.byte	0x5
+ 1331 0065 03020000 		.4byte	.LASF7
+ 1332 0069 02       		.uleb128 0x2
+ 1333 006a 94000000 		.4byte	.LASF8
+ 1334 006e 02       		.byte	0x2
+ 1335 006f 41       		.byte	0x41
+ 1336 0070 74000000 		.4byte	0x74
+ 1337 0074 03       		.uleb128 0x3
+ 1338 0075 04       		.byte	0x4
+ 1339 0076 07       		.byte	0x7
+ 1340 0077 8B030000 		.4byte	.LASF9
+ 1341 007b 03       		.uleb128 0x3
+ 1342 007c 08       		.byte	0x8
+ 1343 007d 05       		.byte	0x5
+ 1344 007e F5010000 		.4byte	.LASF10
+ 1345 0082 03       		.uleb128 0x3
+ 1346 0083 08       		.byte	0x8
+ 1347 0084 07       		.byte	0x7
+ 1348 0085 93020000 		.4byte	.LASF11
+ 1349 0089 04       		.uleb128 0x4
+ 1350 008a 04       		.byte	0x4
+ 1351 008b 05       		.byte	0x5
+ 1352 008c 696E7400 		.ascii	"int\000"
+ 1353 0090 03       		.uleb128 0x3
+ 1354 0091 04       		.byte	0x4
+ 1355 0092 07       		.byte	0x7
+ 1356 0093 B3020000 		.4byte	.LASF12
+ 1357 0097 02       		.uleb128 0x2
+ 1358 0098 26000000 		.4byte	.LASF13
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 32
+
+
+ 1359 009c 03       		.byte	0x3
+ 1360 009d 14       		.byte	0x14
+ 1361 009e 25000000 		.4byte	0x25
+ 1362 00a2 02       		.uleb128 0x2
+ 1363 00a3 5A010000 		.4byte	.LASF14
+ 1364 00a7 03       		.byte	0x3
+ 1365 00a8 18       		.byte	0x18
+ 1366 00a9 37000000 		.4byte	0x37
+ 1367 00ad 02       		.uleb128 0x2
+ 1368 00ae 4D030000 		.4byte	.LASF15
+ 1369 00b2 03       		.byte	0x3
+ 1370 00b3 2C       		.byte	0x2c
+ 1371 00b4 57000000 		.4byte	0x57
+ 1372 00b8 02       		.uleb128 0x2
+ 1373 00b9 AA020000 		.4byte	.LASF16
+ 1374 00bd 03       		.byte	0x3
+ 1375 00be 30       		.byte	0x30
+ 1376 00bf 69000000 		.4byte	0x69
+ 1377 00c3 03       		.uleb128 0x3
+ 1378 00c4 04       		.byte	0x4
+ 1379 00c5 04       		.byte	0x4
+ 1380 00c6 19000000 		.4byte	.LASF17
+ 1381 00ca 03       		.uleb128 0x3
+ 1382 00cb 08       		.byte	0x8
+ 1383 00cc 04       		.byte	0x4
+ 1384 00cd 25040000 		.4byte	.LASF18
+ 1385 00d1 03       		.uleb128 0x3
+ 1386 00d2 01       		.byte	0x1
+ 1387 00d3 08       		.byte	0x8
+ 1388 00d4 48030000 		.4byte	.LASF19
+ 1389 00d8 03       		.uleb128 0x3
+ 1390 00d9 08       		.byte	0x8
+ 1391 00da 04       		.byte	0x4
+ 1392 00db 88000000 		.4byte	.LASF20
+ 1393 00df 03       		.uleb128 0x3
+ 1394 00e0 04       		.byte	0x4
+ 1395 00e1 07       		.byte	0x7
+ 1396 00e2 37000000 		.4byte	.LASF21
+ 1397 00e6 05       		.uleb128 0x5
+ 1398 00e7 08040000 		.4byte	.LASF28
+ 1399 00eb 01       		.byte	0x1
+ 1400 00ec C9       		.byte	0xc9
+ 1401 00ed 00000000 		.4byte	.LFB34
+ 1402 00f1 80000000 		.4byte	.LFE34-.LFB34
+ 1403 00f5 01       		.uleb128 0x1
+ 1404 00f6 9C       		.byte	0x9c
+ 1405 00f7 60010000 		.4byte	0x160
+ 1406 00fb 06       		.uleb128 0x6
+ 1407 00fc 49040000 		.4byte	.LASF22
+ 1408 0100 01       		.byte	0x1
+ 1409 0101 C9       		.byte	0xc9
+ 1410 0102 60010000 		.4byte	0x160
+ 1411 0106 00000000 		.4byte	.LLST0
+ 1412 010a 06       		.uleb128 0x6
+ 1413 010b 51040000 		.4byte	.LASF23
+ 1414 010f 01       		.byte	0x1
+ 1415 0110 C9       		.byte	0xc9
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 33
+
+
+ 1416 0111 60010000 		.4byte	0x160
+ 1417 0115 1F000000 		.4byte	.LLST1
+ 1418 0119 07       		.uleb128 0x7
+ 1419 011a D1030000 		.4byte	.LASF24
+ 1420 011e 01       		.byte	0x1
+ 1421 011f C9       		.byte	0xc9
+ 1422 0120 60010000 		.4byte	0x160
+ 1423 0124 01       		.uleb128 0x1
+ 1424 0125 52       		.byte	0x52
+ 1425 0126 06       		.uleb128 0x6
+ 1426 0127 62040000 		.4byte	.LASF25
+ 1427 012b 01       		.byte	0x1
+ 1428 012c C9       		.byte	0xc9
+ 1429 012d AD000000 		.4byte	0xad
+ 1430 0131 3D000000 		.4byte	.LLST2
+ 1431 0135 07       		.uleb128 0x7
+ 1432 0136 73020000 		.4byte	.LASF26
+ 1433 013a 01       		.byte	0x1
+ 1434 013b C9       		.byte	0xc9
+ 1435 013c AD000000 		.4byte	0xad
+ 1436 0140 02       		.uleb128 0x2
+ 1437 0141 91       		.byte	0x91
+ 1438 0142 00       		.sleb128 0
+ 1439 0143 08       		.uleb128 0x8
+ 1440 0144 6900     		.ascii	"i\000"
+ 1441 0146 01       		.byte	0x1
+ 1442 0147 D2       		.byte	0xd2
+ 1443 0148 AD000000 		.4byte	0xad
+ 1444 014c 5B000000 		.4byte	.LLST3
+ 1445 0150 09       		.uleb128 0x9
+ 1446 0151 C9030000 		.4byte	.LASF27
+ 1447 0155 01       		.byte	0x1
+ 1448 0156 D2       		.byte	0xd2
+ 1449 0157 AD000000 		.4byte	0xad
+ 1450 015b 85000000 		.4byte	.LLST4
+ 1451 015f 00       		.byte	0
+ 1452 0160 0A       		.uleb128 0xa
+ 1453 0161 04       		.byte	0x4
+ 1454 0162 AD000000 		.4byte	0xad
+ 1455 0166 0B       		.uleb128 0xb
+ 1456 0167 9F000000 		.4byte	.LASF29
+ 1457 016b 01       		.byte	0x1
+ 1458 016c 0301     		.2byte	0x103
+ 1459 016e 00000000 		.4byte	.LFB36
+ 1460 0172 34000000 		.4byte	.LFE36-.LFB36
+ 1461 0176 01       		.uleb128 0x1
+ 1462 0177 9C       		.byte	0x9c
+ 1463 0178 C5010000 		.4byte	0x1c5
+ 1464 017c 0C       		.uleb128 0xc
+ 1465 017d D1030000 		.4byte	.LASF24
+ 1466 0181 01       		.byte	0x1
+ 1467 0182 0301     		.2byte	0x103
+ 1468 0184 60010000 		.4byte	0x160
+ 1469 0188 01       		.uleb128 0x1
+ 1470 0189 50       		.byte	0x50
+ 1471 018a 0C       		.uleb128 0xc
+ 1472 018b 62040000 		.4byte	.LASF25
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 34
+
+
+ 1473 018f 01       		.byte	0x1
+ 1474 0190 0301     		.2byte	0x103
+ 1475 0192 AD000000 		.4byte	0xad
+ 1476 0196 01       		.uleb128 0x1
+ 1477 0197 51       		.byte	0x51
+ 1478 0198 0D       		.uleb128 0xd
+ 1479 0199 6900     		.ascii	"i\000"
+ 1480 019b 01       		.byte	0x1
+ 1481 019c 0C01     		.2byte	0x10c
+ 1482 019e AD000000 		.4byte	0xad
+ 1483 01a2 BB000000 		.4byte	.LLST5
+ 1484 01a6 0D       		.uleb128 0xd
+ 1485 01a7 6A00     		.ascii	"j\000"
+ 1486 01a9 01       		.byte	0x1
+ 1487 01aa 0C01     		.2byte	0x10c
+ 1488 01ac AD000000 		.4byte	0xad
+ 1489 01b0 DA000000 		.4byte	.LLST6
+ 1490 01b4 0E       		.uleb128 0xe
+ 1491 01b5 A1010000 		.4byte	.LASF30
+ 1492 01b9 01       		.byte	0x1
+ 1493 01ba 0C01     		.2byte	0x10c
+ 1494 01bc AD000000 		.4byte	0xad
+ 1495 01c0 F8000000 		.4byte	.LLST7
+ 1496 01c4 00       		.byte	0
+ 1497 01c5 0B       		.uleb128 0xb
+ 1498 01c6 B1000000 		.4byte	.LASF31
+ 1499 01ca 01       		.byte	0x1
+ 1500 01cb 1501     		.2byte	0x115
+ 1501 01cd 00000000 		.4byte	.LFB37
+ 1502 01d1 40000000 		.4byte	.LFE37-.LFB37
+ 1503 01d5 01       		.uleb128 0x1
+ 1504 01d6 9C       		.byte	0x9c
+ 1505 01d7 34020000 		.4byte	0x234
+ 1506 01db 0C       		.uleb128 0xc
+ 1507 01dc D1030000 		.4byte	.LASF24
+ 1508 01e0 01       		.byte	0x1
+ 1509 01e1 1501     		.2byte	0x115
+ 1510 01e3 60010000 		.4byte	0x160
+ 1511 01e7 01       		.uleb128 0x1
+ 1512 01e8 50       		.byte	0x50
+ 1513 01e9 0C       		.uleb128 0xc
+ 1514 01ea 6B020000 		.4byte	.LASF32
+ 1515 01ee 01       		.byte	0x1
+ 1516 01ef 1501     		.2byte	0x115
+ 1517 01f1 60010000 		.4byte	0x160
+ 1518 01f5 01       		.uleb128 0x1
+ 1519 01f6 51       		.byte	0x51
+ 1520 01f7 0F       		.uleb128 0xf
+ 1521 01f8 62040000 		.4byte	.LASF25
+ 1522 01fc 01       		.byte	0x1
+ 1523 01fd 1501     		.2byte	0x115
+ 1524 01ff AD000000 		.4byte	0xad
+ 1525 0203 0B010000 		.4byte	.LLST8
+ 1526 0207 0D       		.uleb128 0xd
+ 1527 0208 6900     		.ascii	"i\000"
+ 1528 020a 01       		.byte	0x1
+ 1529 020b 1E01     		.2byte	0x11e
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 35
+
+
+ 1530 020d AD000000 		.4byte	0xad
+ 1531 0211 29010000 		.4byte	.LLST9
+ 1532 0215 0D       		.uleb128 0xd
+ 1533 0216 6A00     		.ascii	"j\000"
+ 1534 0218 01       		.byte	0x1
+ 1535 0219 1E01     		.2byte	0x11e
+ 1536 021b AD000000 		.4byte	0xad
+ 1537 021f 48010000 		.4byte	.LLST10
+ 1538 0223 0E       		.uleb128 0xe
+ 1539 0224 A1010000 		.4byte	.LASF30
+ 1540 0228 01       		.byte	0x1
+ 1541 0229 1E01     		.2byte	0x11e
+ 1542 022b AD000000 		.4byte	0xad
+ 1543 022f 66010000 		.4byte	.LLST11
+ 1544 0233 00       		.byte	0
+ 1545 0234 05       		.uleb128 0x5
+ 1546 0235 00000000 		.4byte	.LASF33
+ 1547 0239 01       		.byte	0x1
+ 1548 023a E7       		.byte	0xe7
+ 1549 023b 00000000 		.4byte	.LFB35
+ 1550 023f 7A000000 		.4byte	.LFE35-.LFB35
+ 1551 0243 01       		.uleb128 0x1
+ 1552 0244 9C       		.byte	0x9c
+ 1553 0245 EF020000 		.4byte	0x2ef
+ 1554 0249 06       		.uleb128 0x6
+ 1555 024a 49040000 		.4byte	.LASF22
+ 1556 024e 01       		.byte	0x1
+ 1557 024f E7       		.byte	0xe7
+ 1558 0250 60010000 		.4byte	0x160
+ 1559 0254 79010000 		.4byte	.LLST12
+ 1560 0258 06       		.uleb128 0x6
+ 1561 0259 29020000 		.4byte	.LASF34
+ 1562 025d 01       		.byte	0x1
+ 1563 025e E7       		.byte	0xe7
+ 1564 025f 60010000 		.4byte	0x160
+ 1565 0263 A5010000 		.4byte	.LLST13
+ 1566 0267 06       		.uleb128 0x6
+ 1567 0268 D1030000 		.4byte	.LASF24
+ 1568 026c 01       		.byte	0x1
+ 1569 026d E7       		.byte	0xe7
+ 1570 026e 60010000 		.4byte	0x160
+ 1571 0272 D1010000 		.4byte	.LLST14
+ 1572 0276 06       		.uleb128 0x6
+ 1573 0277 C0020000 		.4byte	.LASF35
+ 1574 027b 01       		.byte	0x1
+ 1575 027c E7       		.byte	0xe7
+ 1576 027d AD000000 		.4byte	0xad
+ 1577 0281 FD010000 		.4byte	.LLST15
+ 1578 0285 08       		.uleb128 0x8
+ 1579 0286 6900     		.ascii	"i\000"
+ 1580 0288 01       		.byte	0x1
+ 1581 0289 F0       		.byte	0xf0
+ 1582 028a AD000000 		.4byte	0xad
+ 1583 028e 29020000 		.4byte	.LLST16
+ 1584 0292 08       		.uleb128 0x8
+ 1585 0293 6A00     		.ascii	"j\000"
+ 1586 0295 01       		.byte	0x1
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 36
+
+
+ 1587 0296 F0       		.byte	0xf0
+ 1588 0297 AD000000 		.4byte	0xad
+ 1589 029b 49020000 		.4byte	.LLST17
+ 1590 029f 09       		.uleb128 0x9
+ 1591 02a0 76010000 		.4byte	.LASF36
+ 1592 02a4 01       		.byte	0x1
+ 1593 02a5 F0       		.byte	0xf0
+ 1594 02a6 AD000000 		.4byte	0xad
+ 1595 02aa 67020000 		.4byte	.LLST18
+ 1596 02ae 09       		.uleb128 0x9
+ 1597 02af CF010000 		.4byte	.LASF37
+ 1598 02b3 01       		.byte	0x1
+ 1599 02b4 F0       		.byte	0xf0
+ 1600 02b5 AD000000 		.4byte	0xad
+ 1601 02b9 85020000 		.4byte	.LLST19
+ 1602 02bd 10       		.uleb128 0x10
+ 1603 02be 18000000 		.4byte	.LVL41
+ 1604 02c2 C5010000 		.4byte	0x1c5
+ 1605 02c6 D8020000 		.4byte	0x2d8
+ 1606 02ca 11       		.uleb128 0x11
+ 1607 02cb 01       		.uleb128 0x1
+ 1608 02cc 50       		.byte	0x50
+ 1609 02cd 03       		.uleb128 0x3
+ 1610 02ce F3       		.byte	0xf3
+ 1611 02cf 01       		.uleb128 0x1
+ 1612 02d0 52       		.byte	0x52
+ 1613 02d1 11       		.uleb128 0x11
+ 1614 02d2 01       		.uleb128 0x1
+ 1615 02d3 51       		.byte	0x51
+ 1616 02d4 02       		.uleb128 0x2
+ 1617 02d5 74       		.byte	0x74
+ 1618 02d6 00       		.sleb128 0
+ 1619 02d7 00       		.byte	0
+ 1620 02d8 12       		.uleb128 0x12
+ 1621 02d9 72000000 		.4byte	.LVL51
+ 1622 02dd 66010000 		.4byte	0x166
+ 1623 02e1 11       		.uleb128 0x11
+ 1624 02e2 01       		.uleb128 0x1
+ 1625 02e3 50       		.byte	0x50
+ 1626 02e4 02       		.uleb128 0x2
+ 1627 02e5 74       		.byte	0x74
+ 1628 02e6 00       		.sleb128 0
+ 1629 02e7 11       		.uleb128 0x11
+ 1630 02e8 01       		.uleb128 0x1
+ 1631 02e9 51       		.byte	0x51
+ 1632 02ea 02       		.uleb128 0x2
+ 1633 02eb 79       		.byte	0x79
+ 1634 02ec 00       		.sleb128 0
+ 1635 02ed 00       		.byte	0
+ 1636 02ee 00       		.byte	0
+ 1637 02ef 05       		.uleb128 0x5
+ 1638 02f0 4D000000 		.4byte	.LASF38
+ 1639 02f4 01       		.byte	0x1
+ 1640 02f5 BB       		.byte	0xbb
+ 1641 02f6 00000000 		.4byte	.LFB33
+ 1642 02fa 30000000 		.4byte	.LFE33-.LFB33
+ 1643 02fe 01       		.uleb128 0x1
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 37
+
+
+ 1644 02ff 9C       		.byte	0x9c
+ 1645 0300 BD030000 		.4byte	0x3bd
+ 1646 0304 06       		.uleb128 0x6
+ 1647 0305 49040000 		.4byte	.LASF22
+ 1648 0309 01       		.byte	0x1
+ 1649 030a BB       		.byte	0xbb
+ 1650 030b 60010000 		.4byte	0x160
+ 1651 030f A9020000 		.4byte	.LLST20
+ 1652 0313 06       		.uleb128 0x6
+ 1653 0314 51040000 		.4byte	.LASF23
+ 1654 0318 01       		.byte	0x1
+ 1655 0319 BB       		.byte	0xbb
+ 1656 031a 60010000 		.4byte	0x160
+ 1657 031e D5020000 		.4byte	.LLST21
+ 1658 0322 06       		.uleb128 0x6
+ 1659 0323 D1030000 		.4byte	.LASF24
+ 1660 0327 01       		.byte	0x1
+ 1661 0328 BB       		.byte	0xbb
+ 1662 0329 60010000 		.4byte	0x160
+ 1663 032d 01030000 		.4byte	.LLST22
+ 1664 0331 06       		.uleb128 0x6
+ 1665 0332 62040000 		.4byte	.LASF25
+ 1666 0336 01       		.byte	0x1
+ 1667 0337 BB       		.byte	0xbb
+ 1668 0338 AD000000 		.4byte	0xad
+ 1669 033c 2D030000 		.4byte	.LLST23
+ 1670 0340 07       		.uleb128 0x7
+ 1671 0341 73020000 		.4byte	.LASF26
+ 1672 0345 01       		.byte	0x1
+ 1673 0346 BB       		.byte	0xbb
+ 1674 0347 AD000000 		.4byte	0xad
+ 1675 034b 02       		.uleb128 0x2
+ 1676 034c 91       		.byte	0x91
+ 1677 034d 00       		.sleb128 0
+ 1678 034e 07       		.uleb128 0x7
+ 1679 034f C0020000 		.4byte	.LASF35
+ 1680 0353 01       		.byte	0x1
+ 1681 0354 BB       		.byte	0xbb
+ 1682 0355 AD000000 		.4byte	0xad
+ 1683 0359 02       		.uleb128 0x2
+ 1684 035a 91       		.byte	0x91
+ 1685 035b 04       		.sleb128 4
+ 1686 035c 07       		.uleb128 0x7
+ 1687 035d E0030000 		.4byte	.LASF39
+ 1688 0361 01       		.byte	0x1
+ 1689 0362 BB       		.byte	0xbb
+ 1690 0363 AD000000 		.4byte	0xad
+ 1691 0367 02       		.uleb128 0x2
+ 1692 0368 91       		.byte	0x91
+ 1693 0369 08       		.sleb128 8
+ 1694 036a 10       		.uleb128 0x10
+ 1695 036b 14000000 		.4byte	.LVL58
+ 1696 036f E6000000 		.4byte	0xe6
+ 1697 0373 99030000 		.4byte	0x399
+ 1698 0377 11       		.uleb128 0x11
+ 1699 0378 01       		.uleb128 0x1
+ 1700 0379 50       		.byte	0x50
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 38
+
+
+ 1701 037a 02       		.uleb128 0x2
+ 1702 037b 75       		.byte	0x75
+ 1703 037c 00       		.sleb128 0
+ 1704 037d 11       		.uleb128 0x11
+ 1705 037e 01       		.uleb128 0x1
+ 1706 037f 51       		.byte	0x51
+ 1707 0380 02       		.uleb128 0x2
+ 1708 0381 74       		.byte	0x74
+ 1709 0382 00       		.sleb128 0
+ 1710 0383 11       		.uleb128 0x11
+ 1711 0384 01       		.uleb128 0x1
+ 1712 0385 52       		.byte	0x52
+ 1713 0386 02       		.uleb128 0x2
+ 1714 0387 76       		.byte	0x76
+ 1715 0388 00       		.sleb128 0
+ 1716 0389 11       		.uleb128 0x11
+ 1717 038a 01       		.uleb128 0x1
+ 1718 038b 53       		.byte	0x53
+ 1719 038c 03       		.uleb128 0x3
+ 1720 038d F3       		.byte	0xf3
+ 1721 038e 01       		.uleb128 0x1
+ 1722 038f 53       		.byte	0x53
+ 1723 0390 11       		.uleb128 0x11
+ 1724 0391 02       		.uleb128 0x2
+ 1725 0392 7D       		.byte	0x7d
+ 1726 0393 00       		.sleb128 0
+ 1727 0394 03       		.uleb128 0x3
+ 1728 0395 91       		.byte	0x91
+ 1729 0396 00       		.sleb128 0
+ 1730 0397 06       		.byte	0x6
+ 1731 0398 00       		.byte	0
+ 1732 0399 12       		.uleb128 0x12
+ 1733 039a 20000000 		.4byte	.LVL59
+ 1734 039e 34020000 		.4byte	0x234
+ 1735 03a2 11       		.uleb128 0x11
+ 1736 03a3 01       		.uleb128 0x1
+ 1737 03a4 50       		.byte	0x50
+ 1738 03a5 02       		.uleb128 0x2
+ 1739 03a6 75       		.byte	0x75
+ 1740 03a7 00       		.sleb128 0
+ 1741 03a8 11       		.uleb128 0x11
+ 1742 03a9 01       		.uleb128 0x1
+ 1743 03aa 51       		.byte	0x51
+ 1744 03ab 02       		.uleb128 0x2
+ 1745 03ac 74       		.byte	0x74
+ 1746 03ad 00       		.sleb128 0
+ 1747 03ae 11       		.uleb128 0x11
+ 1748 03af 01       		.uleb128 0x1
+ 1749 03b0 52       		.byte	0x52
+ 1750 03b1 02       		.uleb128 0x2
+ 1751 03b2 76       		.byte	0x76
+ 1752 03b3 00       		.sleb128 0
+ 1753 03b4 11       		.uleb128 0x11
+ 1754 03b5 01       		.uleb128 0x1
+ 1755 03b6 53       		.byte	0x53
+ 1756 03b7 03       		.uleb128 0x3
+ 1757 03b8 91       		.byte	0x91
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 39
+
+
+ 1758 03b9 04       		.sleb128 4
+ 1759 03ba 06       		.byte	0x6
+ 1760 03bb 00       		.byte	0
+ 1761 03bc 00       		.byte	0
+ 1762 03bd 13       		.uleb128 0x13
+ 1763 03be A8010000 		.4byte	.LASF40
+ 1764 03c2 01       		.byte	0x1
+ 1765 03c3 23       		.byte	0x23
+ 1766 03c4 00000000 		.4byte	.LFB32
+ 1767 03c8 D8020000 		.4byte	.LFE32-.LFB32
+ 1768 03cc 01       		.uleb128 0x1
+ 1769 03cd 9C       		.byte	0x9c
+ 1770 03ce C5050000 		.4byte	0x5c5
+ 1771 03d2 06       		.uleb128 0x6
+ 1772 03d3 93010000 		.4byte	.LASF41
+ 1773 03d7 01       		.byte	0x1
+ 1774 03d8 23       		.byte	0x23
+ 1775 03d9 C5050000 		.4byte	0x5c5
+ 1776 03dd 4E030000 		.4byte	.LLST24
+ 1777 03e1 06       		.uleb128 0x6
+ 1778 03e2 2C040000 		.4byte	.LASF42
+ 1779 03e6 01       		.byte	0x1
+ 1780 03e7 23       		.byte	0x23
+ 1781 03e8 AD000000 		.4byte	0xad
+ 1782 03ec 7A030000 		.4byte	.LLST25
+ 1783 03f0 06       		.uleb128 0x6
+ 1784 03f1 E6010000 		.4byte	.LASF43
+ 1785 03f5 01       		.byte	0x1
+ 1786 03f6 23       		.byte	0x23
+ 1787 03f7 C5050000 		.4byte	0x5c5
+ 1788 03fb E8030000 		.4byte	.LLST26
+ 1789 03ff 06       		.uleb128 0x6
+ 1790 0400 80020000 		.4byte	.LASF44
+ 1791 0404 01       		.byte	0x1
+ 1792 0405 23       		.byte	0x23
+ 1793 0406 60010000 		.4byte	0x160
+ 1794 040a 14040000 		.4byte	.LLST27
+ 1795 040e 07       		.uleb128 0x7
+ 1796 040f 0C020000 		.4byte	.LASF45
+ 1797 0413 01       		.byte	0x1
+ 1798 0414 23       		.byte	0x23
+ 1799 0415 CB050000 		.4byte	0x5cb
+ 1800 0419 02       		.uleb128 0x2
+ 1801 041a 91       		.byte	0x91
+ 1802 041b 00       		.sleb128 0
+ 1803 041c 07       		.uleb128 0x7
+ 1804 041d 1B020000 		.4byte	.LASF46
+ 1805 0421 01       		.byte	0x1
+ 1806 0422 24       		.byte	0x24
+ 1807 0423 60010000 		.4byte	0x160
+ 1808 0427 02       		.uleb128 0x2
+ 1809 0428 91       		.byte	0x91
+ 1810 0429 04       		.sleb128 4
+ 1811 042a 07       		.uleb128 0x7
+ 1812 042b 40000000 		.4byte	.LASF47
+ 1813 042f 01       		.byte	0x1
+ 1814 0430 24       		.byte	0x24
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 40
+
+
+ 1815 0431 CB050000 		.4byte	0x5cb
+ 1816 0435 02       		.uleb128 0x2
+ 1817 0436 91       		.byte	0x91
+ 1818 0437 08       		.sleb128 8
+ 1819 0438 09       		.uleb128 0x9
+ 1820 0439 80030000 		.4byte	.LASF48
+ 1821 043d 01       		.byte	0x1
+ 1822 043e 37       		.byte	0x37
+ 1823 043f B8000000 		.4byte	0xb8
+ 1824 0443 34040000 		.4byte	.LLST28
+ 1825 0447 08       		.uleb128 0x8
+ 1826 0448 6B00     		.ascii	"k\000"
+ 1827 044a 01       		.byte	0x1
+ 1828 044b 38       		.byte	0x38
+ 1829 044c AD000000 		.4byte	0xad
+ 1830 0450 69040000 		.4byte	.LLST29
+ 1831 0454 09       		.uleb128 0x9
+ 1832 0455 D6010000 		.4byte	.LASF49
+ 1833 0459 01       		.byte	0x1
+ 1834 045a 38       		.byte	0x38
+ 1835 045b AD000000 		.4byte	0xad
+ 1836 045f 71050000 		.4byte	.LLST30
+ 1837 0463 08       		.uleb128 0x8
+ 1838 0464 6900     		.ascii	"i\000"
+ 1839 0466 01       		.byte	0x1
+ 1840 0467 39       		.byte	0x39
+ 1841 0468 AD000000 		.4byte	0xad
+ 1842 046c 92050000 		.4byte	.LLST31
+ 1843 0470 09       		.uleb128 0x9
+ 1844 0471 31020000 		.4byte	.LASF50
+ 1845 0475 01       		.byte	0x1
+ 1846 0476 39       		.byte	0x39
+ 1847 0477 AD000000 		.4byte	0xad
+ 1848 047b B0050000 		.4byte	.LLST32
+ 1849 047f 09       		.uleb128 0x9
+ 1850 0480 6F000000 		.4byte	.LASF51
+ 1851 0484 01       		.byte	0x1
+ 1852 0485 39       		.byte	0x39
+ 1853 0486 AD000000 		.4byte	0xad
+ 1854 048a E6050000 		.4byte	.LLST33
+ 1855 048e 09       		.uleb128 0x9
+ 1856 048f A4030000 		.4byte	.LASF52
+ 1857 0493 01       		.byte	0x1
+ 1858 0494 3A       		.byte	0x3a
+ 1859 0495 AD000000 		.4byte	0xad
+ 1860 0499 34060000 		.4byte	.LLST34
+ 1861 049d 14       		.uleb128 0x14
+ 1862 049e 51040000 		.4byte	.LASF23
+ 1863 04a2 01       		.byte	0x1
+ 1864 04a3 3A       		.byte	0x3a
+ 1865 04a4 AD000000 		.4byte	0xad
+ 1866 04a8 02       		.uleb128 0x2
+ 1867 04a9 91       		.byte	0x91
+ 1868 04aa 54       		.sleb128 -44
+ 1869 04ab 14       		.uleb128 0x14
+ 1870 04ac 81010000 		.4byte	.LASF53
+ 1871 04b0 01       		.byte	0x1
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 41
+
+
+ 1872 04b1 3B       		.byte	0x3b
+ 1873 04b2 D1050000 		.4byte	0x5d1
+ 1874 04b6 03       		.uleb128 0x3
+ 1875 04b7 91       		.byte	0x91
+ 1876 04b8 987F     		.sleb128 -104
+ 1877 04ba 09       		.uleb128 0x9
+ 1878 04bb 62010000 		.4byte	.LASF54
+ 1879 04bf 01       		.byte	0x1
+ 1880 04c0 3C       		.byte	0x3c
+ 1881 04c1 AD000000 		.4byte	0xad
+ 1882 04c5 73060000 		.4byte	.LLST35
+ 1883 04c9 09       		.uleb128 0x9
+ 1884 04ca 1F000000 		.4byte	.LASF55
+ 1885 04ce 01       		.byte	0x1
+ 1886 04cf 3E       		.byte	0x3e
+ 1887 04d0 AD000000 		.4byte	0xad
+ 1888 04d4 CB060000 		.4byte	.LLST36
+ 1889 04d8 09       		.uleb128 0x9
+ 1890 04d9 9D030000 		.4byte	.LASF56
+ 1891 04dd 01       		.byte	0x1
+ 1892 04de 3E       		.byte	0x3e
+ 1893 04df AD000000 		.4byte	0xad
+ 1894 04e3 01070000 		.4byte	.LLST37
+ 1895 04e7 09       		.uleb128 0x9
+ 1896 04e8 7C000000 		.4byte	.LASF57
+ 1897 04ec 01       		.byte	0x1
+ 1898 04ed 3F       		.byte	0x3f
+ 1899 04ee AD000000 		.4byte	0xad
+ 1900 04f2 3A070000 		.4byte	.LLST38
+ 1901 04f6 09       		.uleb128 0x9
+ 1902 04f7 FD030000 		.4byte	.LASF58
+ 1903 04fb 01       		.byte	0x1
+ 1904 04fc 40       		.byte	0x40
+ 1905 04fd AD000000 		.4byte	0xad
+ 1906 0501 67070000 		.4byte	.LLST39
+ 1907 0505 09       		.uleb128 0x9
+ 1908 0506 88020000 		.4byte	.LASF59
+ 1909 050a 01       		.byte	0x1
+ 1910 050b 40       		.byte	0x40
+ 1911 050c AD000000 		.4byte	0xad
+ 1912 0510 A3070000 		.4byte	.LLST40
+ 1913 0514 09       		.uleb128 0x9
+ 1914 0515 4E020000 		.4byte	.LASF60
+ 1915 0519 01       		.byte	0x1
+ 1916 051a 41       		.byte	0x41
+ 1917 051b AD000000 		.4byte	0xad
+ 1918 051f DF070000 		.4byte	.LLST41
+ 1919 0523 09       		.uleb128 0x9
+ 1920 0524 AA030000 		.4byte	.LASF61
+ 1921 0528 01       		.byte	0x1
+ 1922 0529 42       		.byte	0x42
+ 1923 052a AD000000 		.4byte	0xad
+ 1924 052e 09080000 		.4byte	.LLST42
+ 1925 0532 14       		.uleb128 0x14
+ 1926 0533 77030000 		.4byte	.LASF62
+ 1927 0537 01       		.byte	0x1
+ 1928 0538 43       		.byte	0x43
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 42
+
+
+ 1929 0539 E1050000 		.4byte	0x5e1
+ 1930 053d 03       		.uleb128 0x3
+ 1931 053e 91       		.byte	0x91
+ 1932 053f 847F     		.sleb128 -124
+ 1933 0541 09       		.uleb128 0x9
+ 1934 0542 B9030000 		.4byte	.LASF63
+ 1935 0546 01       		.byte	0x1
+ 1936 0547 43       		.byte	0x43
+ 1937 0548 AD000000 		.4byte	0xad
+ 1938 054c 33080000 		.4byte	.LLST43
+ 1939 0550 09       		.uleb128 0x9
+ 1940 0551 F6030000 		.4byte	.LASF64
+ 1941 0555 01       		.byte	0x1
+ 1942 0556 44       		.byte	0x44
+ 1943 0557 AD000000 		.4byte	0xad
+ 1944 055b 81080000 		.4byte	.LLST44
+ 1945 055f 09       		.uleb128 0x9
+ 1946 0560 40030000 		.4byte	.LASF65
+ 1947 0564 01       		.byte	0x1
+ 1948 0565 44       		.byte	0x44
+ 1949 0566 AD000000 		.4byte	0xad
+ 1950 056a 94080000 		.4byte	.LLST45
+ 1951 056e 10       		.uleb128 0x10
+ 1952 056f CE000000 		.4byte	.LVL91
+ 1953 0573 EF020000 		.4byte	0x2ef
+ 1954 0577 AB050000 		.4byte	0x5ab
+ 1955 057b 11       		.uleb128 0x11
+ 1956 057c 01       		.uleb128 0x1
+ 1957 057d 50       		.byte	0x50
+ 1958 057e 03       		.uleb128 0x3
+ 1959 057f 91       		.byte	0x91
+ 1960 0580 987F     		.sleb128 -104
+ 1961 0582 11       		.uleb128 0x11
+ 1962 0583 01       		.uleb128 0x1
+ 1963 0584 51       		.byte	0x51
+ 1964 0585 02       		.uleb128 0x2
+ 1965 0586 91       		.byte	0x91
+ 1966 0587 54       		.sleb128 -44
+ 1967 0588 11       		.uleb128 0x11
+ 1968 0589 01       		.uleb128 0x1
+ 1969 058a 52       		.byte	0x52
+ 1970 058b 05       		.uleb128 0x5
+ 1971 058c 03       		.byte	0x3
+ 1972 058d 00000000 		.4byte	an_x
+ 1973 0591 11       		.uleb128 0x11
+ 1974 0592 01       		.uleb128 0x1
+ 1975 0593 53       		.byte	0x53
+ 1976 0594 02       		.uleb128 0x2
+ 1977 0595 08       		.byte	0x8
+ 1978 0596 64       		.byte	0x64
+ 1979 0597 11       		.uleb128 0x11
+ 1980 0598 02       		.uleb128 0x2
+ 1981 0599 7D       		.byte	0x7d
+ 1982 059a 00       		.sleb128 0
+ 1983 059b 02       		.uleb128 0x2
+ 1984 059c 74       		.byte	0x74
+ 1985 059d 00       		.sleb128 0
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 43
+
+
+ 1986 059e 11       		.uleb128 0x11
+ 1987 059f 02       		.uleb128 0x2
+ 1988 05a0 7D       		.byte	0x7d
+ 1989 05a1 04       		.sleb128 4
+ 1990 05a2 01       		.uleb128 0x1
+ 1991 05a3 34       		.byte	0x34
+ 1992 05a4 11       		.uleb128 0x11
+ 1993 05a5 02       		.uleb128 0x2
+ 1994 05a6 7D       		.byte	0x7d
+ 1995 05a7 08       		.sleb128 8
+ 1996 05a8 01       		.uleb128 0x1
+ 1997 05a9 3F       		.byte	0x3f
+ 1998 05aa 00       		.byte	0
+ 1999 05ab 12       		.uleb128 0x12
+ 2000 05ac 6C020000 		.4byte	.LVL145
+ 2001 05b0 66010000 		.4byte	0x166
+ 2002 05b4 11       		.uleb128 0x11
+ 2003 05b5 01       		.uleb128 0x1
+ 2004 05b6 50       		.byte	0x50
+ 2005 05b7 03       		.uleb128 0x3
+ 2006 05b8 91       		.byte	0x91
+ 2007 05b9 847F     		.sleb128 -124
+ 2008 05bb 11       		.uleb128 0x11
+ 2009 05bc 01       		.uleb128 0x1
+ 2010 05bd 51       		.byte	0x51
+ 2011 05be 04       		.uleb128 0x4
+ 2012 05bf 91       		.byte	0x91
+ 2013 05c0 F87E     		.sleb128 -136
+ 2014 05c2 06       		.byte	0x6
+ 2015 05c3 00       		.byte	0
+ 2016 05c4 00       		.byte	0
+ 2017 05c5 0A       		.uleb128 0xa
+ 2018 05c6 04       		.byte	0x4
+ 2019 05c7 B8000000 		.4byte	0xb8
+ 2020 05cb 0A       		.uleb128 0xa
+ 2021 05cc 04       		.byte	0x4
+ 2022 05cd 97000000 		.4byte	0x97
+ 2023 05d1 15       		.uleb128 0x15
+ 2024 05d2 AD000000 		.4byte	0xad
+ 2025 05d6 E1050000 		.4byte	0x5e1
+ 2026 05da 16       		.uleb128 0x16
+ 2027 05db DF000000 		.4byte	0xdf
+ 2028 05df 0E       		.byte	0xe
+ 2029 05e0 00       		.byte	0
+ 2030 05e1 15       		.uleb128 0x15
+ 2031 05e2 AD000000 		.4byte	0xad
+ 2032 05e6 F1050000 		.4byte	0x5f1
+ 2033 05ea 16       		.uleb128 0x16
+ 2034 05eb DF000000 		.4byte	0xdf
+ 2035 05ef 04       		.byte	0x4
+ 2036 05f0 00       		.byte	0
+ 2037 05f1 15       		.uleb128 0x15
+ 2038 05f2 01060000 		.4byte	0x601
+ 2039 05f6 01060000 		.4byte	0x601
+ 2040 05fa 16       		.uleb128 0x16
+ 2041 05fb DF000000 		.4byte	0xdf
+ 2042 05ff B7       		.byte	0xb7
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 44
+
+
+ 2043 0600 00       		.byte	0
+ 2044 0601 17       		.uleb128 0x17
+ 2045 0602 A2000000 		.4byte	0xa2
+ 2046 0606 18       		.uleb128 0x18
+ 2047 0607 68030000 		.4byte	.LASF66
+ 2048 060b 01       		.byte	0x1
+ 2049 060c 16       		.byte	0x16
+ 2050 060d 17060000 		.4byte	0x617
+ 2051 0611 05       		.uleb128 0x5
+ 2052 0612 03       		.byte	0x3
+ 2053 0613 00000000 		.4byte	uch_spo2_table
+ 2054 0617 17       		.uleb128 0x17
+ 2055 0618 F1050000 		.4byte	0x5f1
+ 2056 061c 15       		.uleb128 0x15
+ 2057 061d AD000000 		.4byte	0xad
+ 2058 0621 2C060000 		.4byte	0x62c
+ 2059 0625 16       		.uleb128 0x16
+ 2060 0626 DF000000 		.4byte	0xdf
+ 2061 062a 63       		.byte	0x63
+ 2062 062b 00       		.byte	0
+ 2063 062c 18       		.uleb128 0x18
+ 2064 062d 3F040000 		.4byte	.LASF67
+ 2065 0631 01       		.byte	0x1
+ 2066 0632 13       		.byte	0x13
+ 2067 0633 1C060000 		.4byte	0x61c
+ 2068 0637 05       		.uleb128 0x5
+ 2069 0638 03       		.byte	0x3
+ 2070 0639 00000000 		.4byte	an_x
+ 2071 063d 18       		.uleb128 0x18
+ 2072 063e 44040000 		.4byte	.LASF68
+ 2073 0642 01       		.byte	0x1
+ 2074 0643 14       		.byte	0x14
+ 2075 0644 1C060000 		.4byte	0x61c
+ 2076 0648 05       		.uleb128 0x5
+ 2077 0649 03       		.byte	0x3
+ 2078 064a 00000000 		.4byte	an_y
+ 2079 064e 00       		.byte	0
+ 2080              		.section	.debug_abbrev,"",%progbits
+ 2081              	.Ldebug_abbrev0:
+ 2082 0000 01       		.uleb128 0x1
+ 2083 0001 11       		.uleb128 0x11
+ 2084 0002 01       		.byte	0x1
+ 2085 0003 25       		.uleb128 0x25
+ 2086 0004 0E       		.uleb128 0xe
+ 2087 0005 13       		.uleb128 0x13
+ 2088 0006 0B       		.uleb128 0xb
+ 2089 0007 03       		.uleb128 0x3
+ 2090 0008 0E       		.uleb128 0xe
+ 2091 0009 1B       		.uleb128 0x1b
+ 2092 000a 0E       		.uleb128 0xe
+ 2093 000b 55       		.uleb128 0x55
+ 2094 000c 17       		.uleb128 0x17
+ 2095 000d 11       		.uleb128 0x11
+ 2096 000e 01       		.uleb128 0x1
+ 2097 000f 10       		.uleb128 0x10
+ 2098 0010 17       		.uleb128 0x17
+ 2099 0011 00       		.byte	0
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 45
+
+
+ 2100 0012 00       		.byte	0
+ 2101 0013 02       		.uleb128 0x2
+ 2102 0014 16       		.uleb128 0x16
+ 2103 0015 00       		.byte	0
+ 2104 0016 03       		.uleb128 0x3
+ 2105 0017 0E       		.uleb128 0xe
+ 2106 0018 3A       		.uleb128 0x3a
+ 2107 0019 0B       		.uleb128 0xb
+ 2108 001a 3B       		.uleb128 0x3b
+ 2109 001b 0B       		.uleb128 0xb
+ 2110 001c 49       		.uleb128 0x49
+ 2111 001d 13       		.uleb128 0x13
+ 2112 001e 00       		.byte	0
+ 2113 001f 00       		.byte	0
+ 2114 0020 03       		.uleb128 0x3
+ 2115 0021 24       		.uleb128 0x24
+ 2116 0022 00       		.byte	0
+ 2117 0023 0B       		.uleb128 0xb
+ 2118 0024 0B       		.uleb128 0xb
+ 2119 0025 3E       		.uleb128 0x3e
+ 2120 0026 0B       		.uleb128 0xb
+ 2121 0027 03       		.uleb128 0x3
+ 2122 0028 0E       		.uleb128 0xe
+ 2123 0029 00       		.byte	0
+ 2124 002a 00       		.byte	0
+ 2125 002b 04       		.uleb128 0x4
+ 2126 002c 24       		.uleb128 0x24
+ 2127 002d 00       		.byte	0
+ 2128 002e 0B       		.uleb128 0xb
+ 2129 002f 0B       		.uleb128 0xb
+ 2130 0030 3E       		.uleb128 0x3e
+ 2131 0031 0B       		.uleb128 0xb
+ 2132 0032 03       		.uleb128 0x3
+ 2133 0033 08       		.uleb128 0x8
+ 2134 0034 00       		.byte	0
+ 2135 0035 00       		.byte	0
+ 2136 0036 05       		.uleb128 0x5
+ 2137 0037 2E       		.uleb128 0x2e
+ 2138 0038 01       		.byte	0x1
+ 2139 0039 3F       		.uleb128 0x3f
+ 2140 003a 19       		.uleb128 0x19
+ 2141 003b 03       		.uleb128 0x3
+ 2142 003c 0E       		.uleb128 0xe
+ 2143 003d 3A       		.uleb128 0x3a
+ 2144 003e 0B       		.uleb128 0xb
+ 2145 003f 3B       		.uleb128 0x3b
+ 2146 0040 0B       		.uleb128 0xb
+ 2147 0041 27       		.uleb128 0x27
+ 2148 0042 19       		.uleb128 0x19
+ 2149 0043 11       		.uleb128 0x11
+ 2150 0044 01       		.uleb128 0x1
+ 2151 0045 12       		.uleb128 0x12
+ 2152 0046 06       		.uleb128 0x6
+ 2153 0047 40       		.uleb128 0x40
+ 2154 0048 18       		.uleb128 0x18
+ 2155 0049 9742     		.uleb128 0x2117
+ 2156 004b 19       		.uleb128 0x19
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 46
+
+
+ 2157 004c 01       		.uleb128 0x1
+ 2158 004d 13       		.uleb128 0x13
+ 2159 004e 00       		.byte	0
+ 2160 004f 00       		.byte	0
+ 2161 0050 06       		.uleb128 0x6
+ 2162 0051 05       		.uleb128 0x5
+ 2163 0052 00       		.byte	0
+ 2164 0053 03       		.uleb128 0x3
+ 2165 0054 0E       		.uleb128 0xe
+ 2166 0055 3A       		.uleb128 0x3a
+ 2167 0056 0B       		.uleb128 0xb
+ 2168 0057 3B       		.uleb128 0x3b
+ 2169 0058 0B       		.uleb128 0xb
+ 2170 0059 49       		.uleb128 0x49
+ 2171 005a 13       		.uleb128 0x13
+ 2172 005b 02       		.uleb128 0x2
+ 2173 005c 17       		.uleb128 0x17
+ 2174 005d 00       		.byte	0
+ 2175 005e 00       		.byte	0
+ 2176 005f 07       		.uleb128 0x7
+ 2177 0060 05       		.uleb128 0x5
+ 2178 0061 00       		.byte	0
+ 2179 0062 03       		.uleb128 0x3
+ 2180 0063 0E       		.uleb128 0xe
+ 2181 0064 3A       		.uleb128 0x3a
+ 2182 0065 0B       		.uleb128 0xb
+ 2183 0066 3B       		.uleb128 0x3b
+ 2184 0067 0B       		.uleb128 0xb
+ 2185 0068 49       		.uleb128 0x49
+ 2186 0069 13       		.uleb128 0x13
+ 2187 006a 02       		.uleb128 0x2
+ 2188 006b 18       		.uleb128 0x18
+ 2189 006c 00       		.byte	0
+ 2190 006d 00       		.byte	0
+ 2191 006e 08       		.uleb128 0x8
+ 2192 006f 34       		.uleb128 0x34
+ 2193 0070 00       		.byte	0
+ 2194 0071 03       		.uleb128 0x3
+ 2195 0072 08       		.uleb128 0x8
+ 2196 0073 3A       		.uleb128 0x3a
+ 2197 0074 0B       		.uleb128 0xb
+ 2198 0075 3B       		.uleb128 0x3b
+ 2199 0076 0B       		.uleb128 0xb
+ 2200 0077 49       		.uleb128 0x49
+ 2201 0078 13       		.uleb128 0x13
+ 2202 0079 02       		.uleb128 0x2
+ 2203 007a 17       		.uleb128 0x17
+ 2204 007b 00       		.byte	0
+ 2205 007c 00       		.byte	0
+ 2206 007d 09       		.uleb128 0x9
+ 2207 007e 34       		.uleb128 0x34
+ 2208 007f 00       		.byte	0
+ 2209 0080 03       		.uleb128 0x3
+ 2210 0081 0E       		.uleb128 0xe
+ 2211 0082 3A       		.uleb128 0x3a
+ 2212 0083 0B       		.uleb128 0xb
+ 2213 0084 3B       		.uleb128 0x3b
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 47
+
+
+ 2214 0085 0B       		.uleb128 0xb
+ 2215 0086 49       		.uleb128 0x49
+ 2216 0087 13       		.uleb128 0x13
+ 2217 0088 02       		.uleb128 0x2
+ 2218 0089 17       		.uleb128 0x17
+ 2219 008a 00       		.byte	0
+ 2220 008b 00       		.byte	0
+ 2221 008c 0A       		.uleb128 0xa
+ 2222 008d 0F       		.uleb128 0xf
+ 2223 008e 00       		.byte	0
+ 2224 008f 0B       		.uleb128 0xb
+ 2225 0090 0B       		.uleb128 0xb
+ 2226 0091 49       		.uleb128 0x49
+ 2227 0092 13       		.uleb128 0x13
+ 2228 0093 00       		.byte	0
+ 2229 0094 00       		.byte	0
+ 2230 0095 0B       		.uleb128 0xb
+ 2231 0096 2E       		.uleb128 0x2e
+ 2232 0097 01       		.byte	0x1
+ 2233 0098 3F       		.uleb128 0x3f
+ 2234 0099 19       		.uleb128 0x19
+ 2235 009a 03       		.uleb128 0x3
+ 2236 009b 0E       		.uleb128 0xe
+ 2237 009c 3A       		.uleb128 0x3a
+ 2238 009d 0B       		.uleb128 0xb
+ 2239 009e 3B       		.uleb128 0x3b
+ 2240 009f 05       		.uleb128 0x5
+ 2241 00a0 27       		.uleb128 0x27
+ 2242 00a1 19       		.uleb128 0x19
+ 2243 00a2 11       		.uleb128 0x11
+ 2244 00a3 01       		.uleb128 0x1
+ 2245 00a4 12       		.uleb128 0x12
+ 2246 00a5 06       		.uleb128 0x6
+ 2247 00a6 40       		.uleb128 0x40
+ 2248 00a7 18       		.uleb128 0x18
+ 2249 00a8 9742     		.uleb128 0x2117
+ 2250 00aa 19       		.uleb128 0x19
+ 2251 00ab 01       		.uleb128 0x1
+ 2252 00ac 13       		.uleb128 0x13
+ 2253 00ad 00       		.byte	0
+ 2254 00ae 00       		.byte	0
+ 2255 00af 0C       		.uleb128 0xc
+ 2256 00b0 05       		.uleb128 0x5
+ 2257 00b1 00       		.byte	0
+ 2258 00b2 03       		.uleb128 0x3
+ 2259 00b3 0E       		.uleb128 0xe
+ 2260 00b4 3A       		.uleb128 0x3a
+ 2261 00b5 0B       		.uleb128 0xb
+ 2262 00b6 3B       		.uleb128 0x3b
+ 2263 00b7 05       		.uleb128 0x5
+ 2264 00b8 49       		.uleb128 0x49
+ 2265 00b9 13       		.uleb128 0x13
+ 2266 00ba 02       		.uleb128 0x2
+ 2267 00bb 18       		.uleb128 0x18
+ 2268 00bc 00       		.byte	0
+ 2269 00bd 00       		.byte	0
+ 2270 00be 0D       		.uleb128 0xd
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 48
+
+
+ 2271 00bf 34       		.uleb128 0x34
+ 2272 00c0 00       		.byte	0
+ 2273 00c1 03       		.uleb128 0x3
+ 2274 00c2 08       		.uleb128 0x8
+ 2275 00c3 3A       		.uleb128 0x3a
+ 2276 00c4 0B       		.uleb128 0xb
+ 2277 00c5 3B       		.uleb128 0x3b
+ 2278 00c6 05       		.uleb128 0x5
+ 2279 00c7 49       		.uleb128 0x49
+ 2280 00c8 13       		.uleb128 0x13
+ 2281 00c9 02       		.uleb128 0x2
+ 2282 00ca 17       		.uleb128 0x17
+ 2283 00cb 00       		.byte	0
+ 2284 00cc 00       		.byte	0
+ 2285 00cd 0E       		.uleb128 0xe
+ 2286 00ce 34       		.uleb128 0x34
+ 2287 00cf 00       		.byte	0
+ 2288 00d0 03       		.uleb128 0x3
+ 2289 00d1 0E       		.uleb128 0xe
+ 2290 00d2 3A       		.uleb128 0x3a
+ 2291 00d3 0B       		.uleb128 0xb
+ 2292 00d4 3B       		.uleb128 0x3b
+ 2293 00d5 05       		.uleb128 0x5
+ 2294 00d6 49       		.uleb128 0x49
+ 2295 00d7 13       		.uleb128 0x13
+ 2296 00d8 02       		.uleb128 0x2
+ 2297 00d9 17       		.uleb128 0x17
+ 2298 00da 00       		.byte	0
+ 2299 00db 00       		.byte	0
+ 2300 00dc 0F       		.uleb128 0xf
+ 2301 00dd 05       		.uleb128 0x5
+ 2302 00de 00       		.byte	0
+ 2303 00df 03       		.uleb128 0x3
+ 2304 00e0 0E       		.uleb128 0xe
+ 2305 00e1 3A       		.uleb128 0x3a
+ 2306 00e2 0B       		.uleb128 0xb
+ 2307 00e3 3B       		.uleb128 0x3b
+ 2308 00e4 05       		.uleb128 0x5
+ 2309 00e5 49       		.uleb128 0x49
+ 2310 00e6 13       		.uleb128 0x13
+ 2311 00e7 02       		.uleb128 0x2
+ 2312 00e8 17       		.uleb128 0x17
+ 2313 00e9 00       		.byte	0
+ 2314 00ea 00       		.byte	0
+ 2315 00eb 10       		.uleb128 0x10
+ 2316 00ec 898201   		.uleb128 0x4109
+ 2317 00ef 01       		.byte	0x1
+ 2318 00f0 11       		.uleb128 0x11
+ 2319 00f1 01       		.uleb128 0x1
+ 2320 00f2 31       		.uleb128 0x31
+ 2321 00f3 13       		.uleb128 0x13
+ 2322 00f4 01       		.uleb128 0x1
+ 2323 00f5 13       		.uleb128 0x13
+ 2324 00f6 00       		.byte	0
+ 2325 00f7 00       		.byte	0
+ 2326 00f8 11       		.uleb128 0x11
+ 2327 00f9 8A8201   		.uleb128 0x410a
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 49
+
+
+ 2328 00fc 00       		.byte	0
+ 2329 00fd 02       		.uleb128 0x2
+ 2330 00fe 18       		.uleb128 0x18
+ 2331 00ff 9142     		.uleb128 0x2111
+ 2332 0101 18       		.uleb128 0x18
+ 2333 0102 00       		.byte	0
+ 2334 0103 00       		.byte	0
+ 2335 0104 12       		.uleb128 0x12
+ 2336 0105 898201   		.uleb128 0x4109
+ 2337 0108 01       		.byte	0x1
+ 2338 0109 11       		.uleb128 0x11
+ 2339 010a 01       		.uleb128 0x1
+ 2340 010b 31       		.uleb128 0x31
+ 2341 010c 13       		.uleb128 0x13
+ 2342 010d 00       		.byte	0
+ 2343 010e 00       		.byte	0
+ 2344 010f 13       		.uleb128 0x13
+ 2345 0110 2E       		.uleb128 0x2e
+ 2346 0111 01       		.byte	0x1
+ 2347 0112 3F       		.uleb128 0x3f
+ 2348 0113 19       		.uleb128 0x19
+ 2349 0114 03       		.uleb128 0x3
+ 2350 0115 0E       		.uleb128 0xe
+ 2351 0116 3A       		.uleb128 0x3a
+ 2352 0117 0B       		.uleb128 0xb
+ 2353 0118 3B       		.uleb128 0x3b
+ 2354 0119 0B       		.uleb128 0xb
+ 2355 011a 27       		.uleb128 0x27
+ 2356 011b 19       		.uleb128 0x19
+ 2357 011c 11       		.uleb128 0x11
+ 2358 011d 01       		.uleb128 0x1
+ 2359 011e 12       		.uleb128 0x12
+ 2360 011f 06       		.uleb128 0x6
+ 2361 0120 40       		.uleb128 0x40
+ 2362 0121 18       		.uleb128 0x18
+ 2363 0122 9642     		.uleb128 0x2116
+ 2364 0124 19       		.uleb128 0x19
+ 2365 0125 01       		.uleb128 0x1
+ 2366 0126 13       		.uleb128 0x13
+ 2367 0127 00       		.byte	0
+ 2368 0128 00       		.byte	0
+ 2369 0129 14       		.uleb128 0x14
+ 2370 012a 34       		.uleb128 0x34
+ 2371 012b 00       		.byte	0
+ 2372 012c 03       		.uleb128 0x3
+ 2373 012d 0E       		.uleb128 0xe
+ 2374 012e 3A       		.uleb128 0x3a
+ 2375 012f 0B       		.uleb128 0xb
+ 2376 0130 3B       		.uleb128 0x3b
+ 2377 0131 0B       		.uleb128 0xb
+ 2378 0132 49       		.uleb128 0x49
+ 2379 0133 13       		.uleb128 0x13
+ 2380 0134 02       		.uleb128 0x2
+ 2381 0135 18       		.uleb128 0x18
+ 2382 0136 00       		.byte	0
+ 2383 0137 00       		.byte	0
+ 2384 0138 15       		.uleb128 0x15
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 50
+
+
+ 2385 0139 01       		.uleb128 0x1
+ 2386 013a 01       		.byte	0x1
+ 2387 013b 49       		.uleb128 0x49
+ 2388 013c 13       		.uleb128 0x13
+ 2389 013d 01       		.uleb128 0x1
+ 2390 013e 13       		.uleb128 0x13
+ 2391 013f 00       		.byte	0
+ 2392 0140 00       		.byte	0
+ 2393 0141 16       		.uleb128 0x16
+ 2394 0142 21       		.uleb128 0x21
+ 2395 0143 00       		.byte	0
+ 2396 0144 49       		.uleb128 0x49
+ 2397 0145 13       		.uleb128 0x13
+ 2398 0146 2F       		.uleb128 0x2f
+ 2399 0147 0B       		.uleb128 0xb
+ 2400 0148 00       		.byte	0
+ 2401 0149 00       		.byte	0
+ 2402 014a 17       		.uleb128 0x17
+ 2403 014b 26       		.uleb128 0x26
+ 2404 014c 00       		.byte	0
+ 2405 014d 49       		.uleb128 0x49
+ 2406 014e 13       		.uleb128 0x13
+ 2407 014f 00       		.byte	0
+ 2408 0150 00       		.byte	0
+ 2409 0151 18       		.uleb128 0x18
+ 2410 0152 34       		.uleb128 0x34
+ 2411 0153 00       		.byte	0
+ 2412 0154 03       		.uleb128 0x3
+ 2413 0155 0E       		.uleb128 0xe
+ 2414 0156 3A       		.uleb128 0x3a
+ 2415 0157 0B       		.uleb128 0xb
+ 2416 0158 3B       		.uleb128 0x3b
+ 2417 0159 0B       		.uleb128 0xb
+ 2418 015a 49       		.uleb128 0x49
+ 2419 015b 13       		.uleb128 0x13
+ 2420 015c 3F       		.uleb128 0x3f
+ 2421 015d 19       		.uleb128 0x19
+ 2422 015e 02       		.uleb128 0x2
+ 2423 015f 18       		.uleb128 0x18
+ 2424 0160 00       		.byte	0
+ 2425 0161 00       		.byte	0
+ 2426 0162 00       		.byte	0
+ 2427              		.section	.debug_loc,"",%progbits
+ 2428              	.Ldebug_loc0:
+ 2429              	.LLST0:
+ 2430 0000 00000000 		.4byte	.LVL0
+ 2431 0004 0C000000 		.4byte	.LVL1
+ 2432 0008 0100     		.2byte	0x1
+ 2433 000a 50       		.byte	0x50
+ 2434 000b 0C000000 		.4byte	.LVL1
+ 2435 000f 80000000 		.4byte	.LFE34
+ 2436 0013 0200     		.2byte	0x2
+ 2437 0015 91       		.byte	0x91
+ 2438 0016 64       		.sleb128 -28
+ 2439 0017 00000000 		.4byte	0
+ 2440 001b 00000000 		.4byte	0
+ 2441              	.LLST1:
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 51
+
+
+ 2442 001f 00000000 		.4byte	.LVL0
+ 2443 0023 0E000000 		.4byte	.LVL2
+ 2444 0027 0100     		.2byte	0x1
+ 2445 0029 51       		.byte	0x51
+ 2446 002a 0E000000 		.4byte	.LVL2
+ 2447 002e 80000000 		.4byte	.LFE34
+ 2448 0032 0100     		.2byte	0x1
+ 2449 0034 50       		.byte	0x50
+ 2450 0035 00000000 		.4byte	0
+ 2451 0039 00000000 		.4byte	0
+ 2452              	.LLST2:
+ 2453 003d 00000000 		.4byte	.LVL0
+ 2454 0041 10000000 		.4byte	.LVL3
+ 2455 0045 0100     		.2byte	0x1
+ 2456 0047 53       		.byte	0x53
+ 2457 0048 10000000 		.4byte	.LVL3
+ 2458 004c 80000000 		.4byte	.LFE34
+ 2459 0050 0100     		.2byte	0x1
+ 2460 0052 51       		.byte	0x51
+ 2461 0053 00000000 		.4byte	0
+ 2462 0057 00000000 		.4byte	0
+ 2463              	.LLST3:
+ 2464 005b 12000000 		.4byte	.LVL4
+ 2465 005f 1A000000 		.4byte	.LVL5
+ 2466 0063 0200     		.2byte	0x2
+ 2467 0065 31       		.byte	0x31
+ 2468 0066 9F       		.byte	0x9f
+ 2469 0067 1A000000 		.4byte	.LVL5
+ 2470 006b 68000000 		.4byte	.LVL15
+ 2471 006f 0100     		.2byte	0x1
+ 2472 0071 56       		.byte	0x56
+ 2473 0072 6A000000 		.4byte	.LVL16
+ 2474 0076 74000000 		.4byte	.LVL18
+ 2475 007a 0100     		.2byte	0x1
+ 2476 007c 56       		.byte	0x56
+ 2477 007d 00000000 		.4byte	0
+ 2478 0081 00000000 		.4byte	0
+ 2479              	.LLST4:
+ 2480 0085 30000000 		.4byte	.LVL6
+ 2481 0089 34000000 		.4byte	.LVL8
+ 2482 008d 0100     		.2byte	0x1
+ 2483 008f 55       		.byte	0x55
+ 2484 0090 36000000 		.4byte	.LVL9
+ 2485 0094 5E000000 		.4byte	.LVL10
+ 2486 0098 0100     		.2byte	0x1
+ 2487 009a 55       		.byte	0x55
+ 2488 009b 5E000000 		.4byte	.LVL10
+ 2489 009f 62000000 		.4byte	.LVL12
+ 2490 00a3 0300     		.2byte	0x3
+ 2491 00a5 75       		.byte	0x75
+ 2492 00a6 7F       		.sleb128 -1
+ 2493 00a7 9F       		.byte	0x9f
+ 2494 00a8 66000000 		.4byte	.LVL14
+ 2495 00ac 6C000000 		.4byte	.LVL17
+ 2496 00b0 0100     		.2byte	0x1
+ 2497 00b2 55       		.byte	0x55
+ 2498 00b3 00000000 		.4byte	0
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 52
+
+
+ 2499 00b7 00000000 		.4byte	0
+ 2500              	.LLST5:
+ 2501 00bb 02000000 		.4byte	.LVL20
+ 2502 00bf 06000000 		.4byte	.LVL21
+ 2503 00c3 0200     		.2byte	0x2
+ 2504 00c5 31       		.byte	0x31
+ 2505 00c6 9F       		.byte	0x9f
+ 2506 00c7 06000000 		.4byte	.LVL21
+ 2507 00cb 2E000000 		.4byte	.LVL27
+ 2508 00cf 0100     		.2byte	0x1
+ 2509 00d1 56       		.byte	0x56
+ 2510 00d2 00000000 		.4byte	0
+ 2511 00d6 00000000 		.4byte	0
+ 2512              	.LLST6:
+ 2513 00da 0A000000 		.4byte	.LVL22
+ 2514 00de 0E000000 		.4byte	.LVL23
+ 2515 00e2 0100     		.2byte	0x1
+ 2516 00e4 56       		.byte	0x56
+ 2517 00e5 0E000000 		.4byte	.LVL23
+ 2518 00e9 26000000 		.4byte	.LVL25
+ 2519 00ed 0100     		.2byte	0x1
+ 2520 00ef 53       		.byte	0x53
+ 2521 00f0 00000000 		.4byte	0
+ 2522 00f4 00000000 		.4byte	0
+ 2523              	.LLST7:
+ 2524 00f8 0A000000 		.4byte	.LVL22
+ 2525 00fc 2A000000 		.4byte	.LVL26
+ 2526 0100 0100     		.2byte	0x1
+ 2527 0102 55       		.byte	0x55
+ 2528 0103 00000000 		.4byte	0
+ 2529 0107 00000000 		.4byte	0
+ 2530              	.LLST8:
+ 2531 010b 00000000 		.4byte	.LVL28
+ 2532 010f 06000000 		.4byte	.LVL30
+ 2533 0113 0100     		.2byte	0x1
+ 2534 0115 52       		.byte	0x52
+ 2535 0116 06000000 		.4byte	.LVL30
+ 2536 011a 40000000 		.4byte	.LFE37
+ 2537 011e 0100     		.2byte	0x1
+ 2538 0120 5C       		.byte	0x5c
+ 2539 0121 00000000 		.4byte	0
+ 2540 0125 00000000 		.4byte	0
+ 2541              	.LLST9:
+ 2542 0129 04000000 		.4byte	.LVL29
+ 2543 012d 08000000 		.4byte	.LVL31
+ 2544 0131 0200     		.2byte	0x2
+ 2545 0133 31       		.byte	0x31
+ 2546 0134 9F       		.byte	0x9f
+ 2547 0135 08000000 		.4byte	.LVL31
+ 2548 0139 40000000 		.4byte	.LFE37
+ 2549 013d 0100     		.2byte	0x1
+ 2550 013f 52       		.byte	0x52
+ 2551 0140 00000000 		.4byte	0
+ 2552 0144 00000000 		.4byte	0
+ 2553              	.LLST10:
+ 2554 0148 0C000000 		.4byte	.LVL32
+ 2555 014c 10000000 		.4byte	.LVL33
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 53
+
+
+ 2556 0150 0100     		.2byte	0x1
+ 2557 0152 52       		.byte	0x52
+ 2558 0153 10000000 		.4byte	.LVL33
+ 2559 0157 30000000 		.4byte	.LVL35
+ 2560 015b 0100     		.2byte	0x1
+ 2561 015d 53       		.byte	0x53
+ 2562 015e 00000000 		.4byte	0
+ 2563 0162 00000000 		.4byte	0
+ 2564              	.LLST11:
+ 2565 0166 0C000000 		.4byte	.LVL32
+ 2566 016a 34000000 		.4byte	.LVL36
+ 2567 016e 0100     		.2byte	0x1
+ 2568 0170 57       		.byte	0x57
+ 2569 0171 00000000 		.4byte	0
+ 2570 0175 00000000 		.4byte	0
+ 2571              	.LLST12:
+ 2572 0179 00000000 		.4byte	.LVL37
+ 2573 017d 0E000000 		.4byte	.LVL38
+ 2574 0181 0100     		.2byte	0x1
+ 2575 0183 50       		.byte	0x50
+ 2576 0184 0E000000 		.4byte	.LVL38
+ 2577 0188 72000000 		.4byte	.LVL52
+ 2578 018c 0100     		.2byte	0x1
+ 2579 018e 54       		.byte	0x54
+ 2580 018f 72000000 		.4byte	.LVL52
+ 2581 0193 7A000000 		.4byte	.LFE35
+ 2582 0197 0400     		.2byte	0x4
+ 2583 0199 F3       		.byte	0xf3
+ 2584 019a 01       		.uleb128 0x1
+ 2585 019b 50       		.byte	0x50
+ 2586 019c 9F       		.byte	0x9f
+ 2587 019d 00000000 		.4byte	0
+ 2588 01a1 00000000 		.4byte	0
+ 2589              	.LLST13:
+ 2590 01a5 00000000 		.4byte	.LVL37
+ 2591 01a9 14000000 		.4byte	.LVL40
+ 2592 01ad 0100     		.2byte	0x1
+ 2593 01af 51       		.byte	0x51
+ 2594 01b0 14000000 		.4byte	.LVL40
+ 2595 01b4 72000000 		.4byte	.LVL53
+ 2596 01b8 0100     		.2byte	0x1
+ 2597 01ba 55       		.byte	0x55
+ 2598 01bb 72000000 		.4byte	.LVL53
+ 2599 01bf 7A000000 		.4byte	.LFE35
+ 2600 01c3 0400     		.2byte	0x4
+ 2601 01c5 F3       		.byte	0xf3
+ 2602 01c6 01       		.uleb128 0x1
+ 2603 01c7 51       		.byte	0x51
+ 2604 01c8 9F       		.byte	0x9f
+ 2605 01c9 00000000 		.4byte	0
+ 2606 01cd 00000000 		.4byte	0
+ 2607              	.LLST14:
+ 2608 01d1 00000000 		.4byte	.LVL37
+ 2609 01d5 12000000 		.4byte	.LVL39
+ 2610 01d9 0100     		.2byte	0x1
+ 2611 01db 52       		.byte	0x52
+ 2612 01dc 12000000 		.4byte	.LVL39
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 54
+
+
+ 2613 01e0 17000000 		.4byte	.LVL41-1
+ 2614 01e4 0100     		.2byte	0x1
+ 2615 01e6 50       		.byte	0x50
+ 2616 01e7 17000000 		.4byte	.LVL41-1
+ 2617 01eb 7A000000 		.4byte	.LFE35
+ 2618 01ef 0400     		.2byte	0x4
+ 2619 01f1 F3       		.byte	0xf3
+ 2620 01f2 01       		.uleb128 0x1
+ 2621 01f3 52       		.byte	0x52
+ 2622 01f4 9F       		.byte	0x9f
+ 2623 01f5 00000000 		.4byte	0
+ 2624 01f9 00000000 		.4byte	0
+ 2625              	.LLST15:
+ 2626 01fd 00000000 		.4byte	.LVL37
+ 2627 0201 17000000 		.4byte	.LVL41-1
+ 2628 0205 0100     		.2byte	0x1
+ 2629 0207 53       		.byte	0x53
+ 2630 0208 17000000 		.4byte	.LVL41-1
+ 2631 020c 72000000 		.4byte	.LVL54
+ 2632 0210 0100     		.2byte	0x1
+ 2633 0212 56       		.byte	0x56
+ 2634 0213 72000000 		.4byte	.LVL54
+ 2635 0217 7A000000 		.4byte	.LFE35
+ 2636 021b 0400     		.2byte	0x4
+ 2637 021d F3       		.byte	0xf3
+ 2638 021e 01       		.uleb128 0x1
+ 2639 021f 53       		.byte	0x53
+ 2640 0220 9F       		.byte	0x9f
+ 2641 0221 00000000 		.4byte	0
+ 2642 0225 00000000 		.4byte	0
+ 2643              	.LLST16:
+ 2644 0229 18000000 		.4byte	.LVL41
+ 2645 022d 1E000000 		.4byte	.LVL42
+ 2646 0231 0300     		.2byte	0x3
+ 2647 0233 09       		.byte	0x9
+ 2648 0234 FF       		.byte	0xff
+ 2649 0235 9F       		.byte	0x9f
+ 2650 0236 1E000000 		.4byte	.LVL42
+ 2651 023a 72000000 		.4byte	.LVL55
+ 2652 023e 0100     		.2byte	0x1
+ 2653 0240 57       		.byte	0x57
+ 2654 0241 00000000 		.4byte	0
+ 2655 0245 00000000 		.4byte	0
+ 2656              	.LLST17:
+ 2657 0249 24000000 		.4byte	.LVL44
+ 2658 024d 28000000 		.4byte	.LVL45
+ 2659 0251 0100     		.2byte	0x1
+ 2660 0253 53       		.byte	0x53
+ 2661 0254 28000000 		.4byte	.LVL45
+ 2662 0258 62000000 		.4byte	.LVL50
+ 2663 025c 0100     		.2byte	0x1
+ 2664 025e 50       		.byte	0x50
+ 2665 025f 00000000 		.4byte	0
+ 2666 0263 00000000 		.4byte	0
+ 2667              	.LLST18:
+ 2668 0267 1E000000 		.4byte	.LVL42
+ 2669 026b 20000000 		.4byte	.LVL43
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 55
+
+
+ 2670 026f 0100     		.2byte	0x1
+ 2671 0271 53       		.byte	0x53
+ 2672 0272 20000000 		.4byte	.LVL43
+ 2673 0276 62000000 		.4byte	.LVL50
+ 2674 027a 0100     		.2byte	0x1
+ 2675 027c 59       		.byte	0x59
+ 2676 027d 00000000 		.4byte	0
+ 2677 0281 00000000 		.4byte	0
+ 2678              	.LLST19:
+ 2679 0285 44000000 		.4byte	.LVL46
+ 2680 0289 50000000 		.4byte	.LVL47
+ 2681 028d 0100     		.2byte	0x1
+ 2682 028f 52       		.byte	0x52
+ 2683 0290 50000000 		.4byte	.LVL47
+ 2684 0294 54000000 		.4byte	.LVL48
+ 2685 0298 0700     		.2byte	0x7
+ 2686 029a 73       		.byte	0x73
+ 2687 029b 00       		.sleb128 0
+ 2688 029c 06       		.byte	0x6
+ 2689 029d 78       		.byte	0x78
+ 2690 029e 00       		.sleb128 0
+ 2691 029f 1C       		.byte	0x1c
+ 2692 02a0 9F       		.byte	0x9f
+ 2693 02a1 00000000 		.4byte	0
+ 2694 02a5 00000000 		.4byte	0
+ 2695              	.LLST20:
+ 2696 02a9 00000000 		.4byte	.LVL56
+ 2697 02ad 13000000 		.4byte	.LVL58-1
+ 2698 02b1 0100     		.2byte	0x1
+ 2699 02b3 50       		.byte	0x50
+ 2700 02b4 13000000 		.4byte	.LVL58-1
+ 2701 02b8 2E000000 		.4byte	.LVL61
+ 2702 02bc 0100     		.2byte	0x1
+ 2703 02be 55       		.byte	0x55
+ 2704 02bf 2E000000 		.4byte	.LVL61
+ 2705 02c3 30000000 		.4byte	.LFE33
+ 2706 02c7 0400     		.2byte	0x4
+ 2707 02c9 F3       		.byte	0xf3
+ 2708 02ca 01       		.uleb128 0x1
+ 2709 02cb 50       		.byte	0x50
+ 2710 02cc 9F       		.byte	0x9f
+ 2711 02cd 00000000 		.4byte	0
+ 2712 02d1 00000000 		.4byte	0
+ 2713              	.LLST21:
+ 2714 02d5 00000000 		.4byte	.LVL56
+ 2715 02d9 13000000 		.4byte	.LVL58-1
+ 2716 02dd 0100     		.2byte	0x1
+ 2717 02df 51       		.byte	0x51
+ 2718 02e0 13000000 		.4byte	.LVL58-1
+ 2719 02e4 2E000000 		.4byte	.LVL60
+ 2720 02e8 0100     		.2byte	0x1
+ 2721 02ea 54       		.byte	0x54
+ 2722 02eb 2E000000 		.4byte	.LVL60
+ 2723 02ef 30000000 		.4byte	.LFE33
+ 2724 02f3 0400     		.2byte	0x4
+ 2725 02f5 F3       		.byte	0xf3
+ 2726 02f6 01       		.uleb128 0x1
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 56
+
+
+ 2727 02f7 51       		.byte	0x51
+ 2728 02f8 9F       		.byte	0x9f
+ 2729 02f9 00000000 		.4byte	0
+ 2730 02fd 00000000 		.4byte	0
+ 2731              	.LLST22:
+ 2732 0301 00000000 		.4byte	.LVL56
+ 2733 0305 0C000000 		.4byte	.LVL57
+ 2734 0309 0100     		.2byte	0x1
+ 2735 030b 52       		.byte	0x52
+ 2736 030c 0C000000 		.4byte	.LVL57
+ 2737 0310 2E000000 		.4byte	.LVL62
+ 2738 0314 0100     		.2byte	0x1
+ 2739 0316 56       		.byte	0x56
+ 2740 0317 2E000000 		.4byte	.LVL62
+ 2741 031b 30000000 		.4byte	.LFE33
+ 2742 031f 0400     		.2byte	0x4
+ 2743 0321 F3       		.byte	0xf3
+ 2744 0322 01       		.uleb128 0x1
+ 2745 0323 52       		.byte	0x52
+ 2746 0324 9F       		.byte	0x9f
+ 2747 0325 00000000 		.4byte	0
+ 2748 0329 00000000 		.4byte	0
+ 2749              	.LLST23:
+ 2750 032d 00000000 		.4byte	.LVL56
+ 2751 0331 13000000 		.4byte	.LVL58-1
+ 2752 0335 0100     		.2byte	0x1
+ 2753 0337 53       		.byte	0x53
+ 2754 0338 13000000 		.4byte	.LVL58-1
+ 2755 033c 30000000 		.4byte	.LFE33
+ 2756 0340 0400     		.2byte	0x4
+ 2757 0342 F3       		.byte	0xf3
+ 2758 0343 01       		.uleb128 0x1
+ 2759 0344 53       		.byte	0x53
+ 2760 0345 9F       		.byte	0x9f
+ 2761 0346 00000000 		.4byte	0
+ 2762 034a 00000000 		.4byte	0
+ 2763              	.LLST24:
+ 2764 034e 00000000 		.4byte	.LVL63
+ 2765 0352 1A000000 		.4byte	.LVL66
+ 2766 0356 0100     		.2byte	0x1
+ 2767 0358 50       		.byte	0x50
+ 2768 0359 1A000000 		.4byte	.LVL66
+ 2769 035d 7A010000 		.4byte	.LVL116
+ 2770 0361 0100     		.2byte	0x1
+ 2771 0363 56       		.byte	0x56
+ 2772 0364 7A010000 		.4byte	.LVL116
+ 2773 0368 D8020000 		.4byte	.LFE32
+ 2774 036c 0400     		.2byte	0x4
+ 2775 036e F3       		.byte	0xf3
+ 2776 036f 01       		.uleb128 0x1
+ 2777 0370 50       		.byte	0x50
+ 2778 0371 9F       		.byte	0x9f
+ 2779 0372 00000000 		.4byte	0
+ 2780 0376 00000000 		.4byte	0
+ 2781              	.LLST25:
+ 2782 037a 00000000 		.4byte	.LVL63
+ 2783 037e 2A000000 		.4byte	.LVL70
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 57
+
+
+ 2784 0382 0100     		.2byte	0x1
+ 2785 0384 51       		.byte	0x51
+ 2786 0385 2A000000 		.4byte	.LVL70
+ 2787 0389 4A000000 		.4byte	.LVL76
+ 2788 038d 0100     		.2byte	0x1
+ 2789 038f 55       		.byte	0x55
+ 2790 0390 4A000000 		.4byte	.LVL76
+ 2791 0394 84000000 		.4byte	.LVL81
+ 2792 0398 0100     		.2byte	0x1
+ 2793 039a 5C       		.byte	0x5c
+ 2794 039b 84000000 		.4byte	.LVL81
+ 2795 039f D6000000 		.4byte	.LVL92
+ 2796 03a3 0100     		.2byte	0x1
+ 2797 03a5 55       		.byte	0x55
+ 2798 03a6 D6000000 		.4byte	.LVL92
+ 2799 03aa EA000000 		.4byte	.LVL95
+ 2800 03ae 0100     		.2byte	0x1
+ 2801 03b0 5C       		.byte	0x5c
+ 2802 03b1 EA000000 		.4byte	.LVL95
+ 2803 03b5 F2000000 		.4byte	.LVL97
+ 2804 03b9 0100     		.2byte	0x1
+ 2805 03bb 55       		.byte	0x55
+ 2806 03bc F2000000 		.4byte	.LVL97
+ 2807 03c0 03010000 		.4byte	.LVL99-1
+ 2808 03c4 0100     		.2byte	0x1
+ 2809 03c6 5C       		.byte	0x5c
+ 2810 03c7 03010000 		.4byte	.LVL99-1
+ 2811 03cb 82010000 		.4byte	.LVL118
+ 2812 03cf 0100     		.2byte	0x1
+ 2813 03d1 55       		.byte	0x55
+ 2814 03d2 82010000 		.4byte	.LVL118
+ 2815 03d6 D8020000 		.4byte	.LFE32
+ 2816 03da 0400     		.2byte	0x4
+ 2817 03dc F3       		.byte	0xf3
+ 2818 03dd 01       		.uleb128 0x1
+ 2819 03de 51       		.byte	0x51
+ 2820 03df 9F       		.byte	0x9f
+ 2821 03e0 00000000 		.4byte	0
+ 2822 03e4 00000000 		.4byte	0
+ 2823              	.LLST26:
+ 2824 03e8 00000000 		.4byte	.LVL63
+ 2825 03ec 1C000000 		.4byte	.LVL67
+ 2826 03f0 0100     		.2byte	0x1
+ 2827 03f2 52       		.byte	0x52
+ 2828 03f3 1C000000 		.4byte	.LVL67
+ 2829 03f7 7C010000 		.4byte	.LVL117
+ 2830 03fb 0100     		.2byte	0x1
+ 2831 03fd 57       		.byte	0x57
+ 2832 03fe 7C010000 		.4byte	.LVL117
+ 2833 0402 D8020000 		.4byte	.LFE32
+ 2834 0406 0400     		.2byte	0x4
+ 2835 0408 F3       		.byte	0xf3
+ 2836 0409 01       		.uleb128 0x1
+ 2837 040a 52       		.byte	0x52
+ 2838 040b 9F       		.byte	0x9f
+ 2839 040c 00000000 		.4byte	0
+ 2840 0410 00000000 		.4byte	0
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 58
+
+
+ 2841              	.LLST27:
+ 2842 0414 00000000 		.4byte	.LVL63
+ 2843 0418 18000000 		.4byte	.LVL65
+ 2844 041c 0100     		.2byte	0x1
+ 2845 041e 53       		.byte	0x53
+ 2846 041f 18000000 		.4byte	.LVL65
+ 2847 0423 D8020000 		.4byte	.LFE32
+ 2848 0427 0300     		.2byte	0x3
+ 2849 0429 91       		.byte	0x91
+ 2850 042a FC7E     		.sleb128 -132
+ 2851 042c 00000000 		.4byte	0
+ 2852 0430 00000000 		.4byte	0
+ 2853              	.LLST28:
+ 2854 0434 16000000 		.4byte	.LVL64
+ 2855 0438 1C000000 		.4byte	.LVL67
+ 2856 043c 0200     		.2byte	0x2
+ 2857 043e 30       		.byte	0x30
+ 2858 043f 9F       		.byte	0x9f
+ 2859 0440 1C000000 		.4byte	.LVL67
+ 2860 0444 2D000000 		.4byte	.LVL71-1
+ 2861 0448 0100     		.2byte	0x1
+ 2862 044a 50       		.byte	0x50
+ 2863 044b 30000000 		.4byte	.LVL72
+ 2864 044f 34000000 		.4byte	.LVL73
+ 2865 0453 0100     		.2byte	0x1
+ 2866 0455 50       		.byte	0x50
+ 2867 0456 34000000 		.4byte	.LVL73
+ 2868 045a 46000000 		.4byte	.LVL75
+ 2869 045e 0100     		.2byte	0x1
+ 2870 0460 54       		.byte	0x54
+ 2871 0461 00000000 		.4byte	0
+ 2872 0465 00000000 		.4byte	0
+ 2873              	.LLST29:
+ 2874 0469 16000000 		.4byte	.LVL64
+ 2875 046d 1C000000 		.4byte	.LVL67
+ 2876 0471 0200     		.2byte	0x2
+ 2877 0473 30       		.byte	0x30
+ 2878 0474 9F       		.byte	0x9f
+ 2879 0475 1C000000 		.4byte	.LVL67
+ 2880 0479 2D000000 		.4byte	.LVL71-1
+ 2881 047d 0100     		.2byte	0x1
+ 2882 047f 53       		.byte	0x53
+ 2883 0480 30000000 		.4byte	.LVL72
+ 2884 0484 34000000 		.4byte	.LVL73
+ 2885 0488 0200     		.2byte	0x2
+ 2886 048a 30       		.byte	0x30
+ 2887 048b 9F       		.byte	0x9f
+ 2888 048c 34000000 		.4byte	.LVL73
+ 2889 0490 4A000000 		.4byte	.LVL76
+ 2890 0494 0100     		.2byte	0x1
+ 2891 0496 53       		.byte	0x53
+ 2892 0497 4A000000 		.4byte	.LVL76
+ 2893 049b 64000000 		.4byte	.LVL77
+ 2894 049f 0100     		.2byte	0x1
+ 2895 04a1 54       		.byte	0x54
+ 2896 04a2 64000000 		.4byte	.LVL77
+ 2897 04a6 66000000 		.4byte	.LVL78
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 59
+
+
+ 2898 04aa 0300     		.2byte	0x3
+ 2899 04ac 74       		.byte	0x74
+ 2900 04ad 7D       		.sleb128 -3
+ 2901 04ae 9F       		.byte	0x9f
+ 2902 04af 66000000 		.4byte	.LVL78
+ 2903 04b3 76000000 		.4byte	.LVL79
+ 2904 04b7 0300     		.2byte	0x3
+ 2905 04b9 70       		.byte	0x70
+ 2906 04ba 7F       		.sleb128 -1
+ 2907 04bb 9F       		.byte	0x9f
+ 2908 04bc 76000000 		.4byte	.LVL79
+ 2909 04c0 78000000 		.4byte	.LVL80
+ 2910 04c4 0100     		.2byte	0x1
+ 2911 04c6 50       		.byte	0x50
+ 2912 04c7 78000000 		.4byte	.LVL80
+ 2913 04cb 84000000 		.4byte	.LVL81
+ 2914 04cf 0100     		.2byte	0x1
+ 2915 04d1 54       		.byte	0x54
+ 2916 04d2 84000000 		.4byte	.LVL81
+ 2917 04d6 97000000 		.4byte	.LVL84-1
+ 2918 04da 0100     		.2byte	0x1
+ 2919 04dc 53       		.byte	0x53
+ 2920 04dd A6000000 		.4byte	.LVL87
+ 2921 04e1 AA000000 		.4byte	.LVL88
+ 2922 04e5 0200     		.2byte	0x2
+ 2923 04e7 30       		.byte	0x30
+ 2924 04e8 9F       		.byte	0x9f
+ 2925 04e9 AA000000 		.4byte	.LVL88
+ 2926 04ed BA000000 		.4byte	.LVL90
+ 2927 04f1 0100     		.2byte	0x1
+ 2928 04f3 53       		.byte	0x53
+ 2929 04f4 D6000000 		.4byte	.LVL92
+ 2930 04f8 EA000000 		.4byte	.LVL95
+ 2931 04fc 0100     		.2byte	0x1
+ 2932 04fe 51       		.byte	0x51
+ 2933 04ff F2000000 		.4byte	.LVL97
+ 2934 0503 FC000000 		.4byte	.LVL98
+ 2935 0507 0100     		.2byte	0x1
+ 2936 0509 51       		.byte	0x51
+ 2937 050a 28010000 		.4byte	.LVL104
+ 2938 050e 40010000 		.4byte	.LVL106
+ 2939 0512 0100     		.2byte	0x1
+ 2940 0514 52       		.byte	0x52
+ 2941 0515 40010000 		.4byte	.LVL106
+ 2942 0519 44010000 		.4byte	.LVL108
+ 2943 051d 0200     		.2byte	0x2
+ 2944 051f 30       		.byte	0x30
+ 2945 0520 9F       		.byte	0x9f
+ 2946 0521 44010000 		.4byte	.LVL108
+ 2947 0525 54010000 		.4byte	.LVL110
+ 2948 0529 0100     		.2byte	0x1
+ 2949 052b 53       		.byte	0x53
+ 2950 052c 58010000 		.4byte	.LVL111
+ 2951 0530 64010000 		.4byte	.LVL112
+ 2952 0534 0100     		.2byte	0x1
+ 2953 0536 53       		.byte	0x53
+ 2954 0537 70010000 		.4byte	.LVL113
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 60
+
+
+ 2955 053b 78010000 		.4byte	.LVL115
+ 2956 053f 0100     		.2byte	0x1
+ 2957 0541 53       		.byte	0x53
+ 2958 0542 82010000 		.4byte	.LVL118
+ 2959 0546 90010000 		.4byte	.LVL119
+ 2960 054a 0100     		.2byte	0x1
+ 2961 054c 53       		.byte	0x53
+ 2962 054d 90010000 		.4byte	.LVL119
+ 2963 0551 5A020000 		.4byte	.LVL144
+ 2964 0555 0700     		.2byte	0x7
+ 2965 0557 91       		.byte	0x91
+ 2966 0558 E47E     		.sleb128 -156
+ 2967 055a 06       		.byte	0x6
+ 2968 055b 31       		.byte	0x31
+ 2969 055c 1C       		.byte	0x1c
+ 2970 055d 9F       		.byte	0x9f
+ 2971 055e 5A020000 		.4byte	.LVL144
+ 2972 0562 6B020000 		.4byte	.LVL145-1
+ 2973 0566 0100     		.2byte	0x1
+ 2974 0568 53       		.byte	0x53
+ 2975 0569 00000000 		.4byte	0
+ 2976 056d 00000000 		.4byte	0
+ 2977              	.LLST30:
+ 2978 0571 40010000 		.4byte	.LVL106
+ 2979 0575 82010000 		.4byte	.LVL118
+ 2980 0579 0200     		.2byte	0x2
+ 2981 057b 30       		.byte	0x30
+ 2982 057c 9F       		.byte	0x9f
+ 2983 057d 82010000 		.4byte	.LVL118
+ 2984 0581 B6020000 		.4byte	.LVL159
+ 2985 0585 0300     		.2byte	0x3
+ 2986 0587 91       		.byte	0x91
+ 2987 0588 F87E     		.sleb128 -136
+ 2988 058a 00000000 		.4byte	0
+ 2989 058e 00000000 		.4byte	0
+ 2990              	.LLST31:
+ 2991 0592 9E010000 		.4byte	.LVL120
+ 2992 0596 BE010000 		.4byte	.LVL126
+ 2993 059a 0100     		.2byte	0x1
+ 2994 059c 53       		.byte	0x53
+ 2995 059d C6010000 		.4byte	.LVL127
+ 2996 05a1 CC010000 		.4byte	.LVL128
+ 2997 05a5 0100     		.2byte	0x1
+ 2998 05a7 53       		.byte	0x53
+ 2999 05a8 00000000 		.4byte	0
+ 3000 05ac 00000000 		.4byte	0
+ 3001              	.LLST32:
+ 3002 05b0 40010000 		.4byte	.LVL106
+ 3003 05b4 42010000 		.4byte	.LVL107
+ 3004 05b8 0100     		.2byte	0x1
+ 3005 05ba 53       		.byte	0x53
+ 3006 05bb 42010000 		.4byte	.LVL107
+ 3007 05bf 58010000 		.4byte	.LVL111
+ 3008 05c3 0100     		.2byte	0x1
+ 3009 05c5 59       		.byte	0x59
+ 3010 05c6 58010000 		.4byte	.LVL111
+ 3011 05ca 82010000 		.4byte	.LVL118
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 61
+
+
+ 3012 05ce 0100     		.2byte	0x1
+ 3013 05d0 50       		.byte	0x50
+ 3014 05d1 82010000 		.4byte	.LVL118
+ 3015 05d5 B6020000 		.4byte	.LVL159
+ 3016 05d9 0300     		.2byte	0x3
+ 3017 05db 91       		.byte	0x91
+ 3018 05dc EC7E     		.sleb128 -148
+ 3019 05de 00000000 		.4byte	0
+ 3020 05e2 00000000 		.4byte	0
+ 3021              	.LLST33:
+ 3022 05e6 74020000 		.4byte	.LVL146
+ 3023 05ea 82020000 		.4byte	.LVL147
+ 3024 05ee 0100     		.2byte	0x1
+ 3025 05f0 53       		.byte	0x53
+ 3026 05f1 82020000 		.4byte	.LVL147
+ 3027 05f5 8E020000 		.4byte	.LVL149
+ 3028 05f9 0E00     		.2byte	0xe
+ 3029 05fb 91       		.byte	0x91
+ 3030 05fc F87E     		.sleb128 -136
+ 3031 05fe 06       		.byte	0x6
+ 3032 05ff 4F       		.byte	0x4f
+ 3033 0600 25       		.byte	0x25
+ 3034 0601 91       		.byte	0x91
+ 3035 0602 F87E     		.sleb128 -136
+ 3036 0604 06       		.byte	0x6
+ 3037 0605 22       		.byte	0x22
+ 3038 0606 31       		.byte	0x31
+ 3039 0607 26       		.byte	0x26
+ 3040 0608 9F       		.byte	0x9f
+ 3041 0609 8E020000 		.4byte	.LVL149
+ 3042 060d 90020000 		.4byte	.LVL150
+ 3043 0611 0100     		.2byte	0x1
+ 3044 0613 53       		.byte	0x53
+ 3045 0614 90020000 		.4byte	.LVL150
+ 3046 0618 B6020000 		.4byte	.LVL159
+ 3047 061c 0E00     		.2byte	0xe
+ 3048 061e 91       		.byte	0x91
+ 3049 061f F87E     		.sleb128 -136
+ 3050 0621 06       		.byte	0x6
+ 3051 0622 4F       		.byte	0x4f
+ 3052 0623 25       		.byte	0x25
+ 3053 0624 91       		.byte	0x91
+ 3054 0625 F87E     		.sleb128 -136
+ 3055 0627 06       		.byte	0x6
+ 3056 0628 22       		.byte	0x22
+ 3057 0629 31       		.byte	0x31
+ 3058 062a 26       		.byte	0x26
+ 3059 062b 9F       		.byte	0x9f
+ 3060 062c 00000000 		.4byte	0
+ 3061 0630 00000000 		.4byte	0
+ 3062              	.LLST34:
+ 3063 0634 84000000 		.4byte	.LVL81
+ 3064 0638 97000000 		.4byte	.LVL84-1
+ 3065 063c 0100     		.2byte	0x1
+ 3066 063e 50       		.byte	0x50
+ 3067 063f 9A000000 		.4byte	.LVL85
+ 3068 0643 A0000000 		.4byte	.LVL86
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 62
+
+
+ 3069 0647 0100     		.2byte	0x1
+ 3070 0649 50       		.byte	0x50
+ 3071 064a A0000000 		.4byte	.LVL86
+ 3072 064e D6000000 		.4byte	.LVL92
+ 3073 0652 0100     		.2byte	0x1
+ 3074 0654 54       		.byte	0x54
+ 3075 0655 EA000000 		.4byte	.LVL95
+ 3076 0659 EC000000 		.4byte	.LVL96
+ 3077 065d 0100     		.2byte	0x1
+ 3078 065f 54       		.byte	0x54
+ 3079 0660 1A010000 		.4byte	.LVL103
+ 3080 0664 28010000 		.4byte	.LVL104
+ 3081 0668 0100     		.2byte	0x1
+ 3082 066a 54       		.byte	0x54
+ 3083 066b 00000000 		.4byte	0
+ 3084 066f 00000000 		.4byte	0
+ 3085              	.LLST35:
+ 3086 0673 CE000000 		.4byte	.LVL91
+ 3087 0677 D6000000 		.4byte	.LVL92
+ 3088 067b 0200     		.2byte	0x2
+ 3089 067d 30       		.byte	0x30
+ 3090 067e 9F       		.byte	0x9f
+ 3091 067f D6000000 		.4byte	.LVL92
+ 3092 0683 EA000000 		.4byte	.LVL95
+ 3093 0687 0100     		.2byte	0x1
+ 3094 0689 54       		.byte	0x54
+ 3095 068a EA000000 		.4byte	.LVL95
+ 3096 068e F2000000 		.4byte	.LVL97
+ 3097 0692 0200     		.2byte	0x2
+ 3098 0694 30       		.byte	0x30
+ 3099 0695 9F       		.byte	0x9f
+ 3100 0696 F2000000 		.4byte	.LVL97
+ 3101 069a 06010000 		.4byte	.LVL100
+ 3102 069e 0100     		.2byte	0x1
+ 3103 06a0 54       		.byte	0x54
+ 3104 06a1 06010000 		.4byte	.LVL100
+ 3105 06a5 08010000 		.4byte	.LVL101
+ 3106 06a9 0100     		.2byte	0x1
+ 3107 06ab 50       		.byte	0x50
+ 3108 06ac 08010000 		.4byte	.LVL101
+ 3109 06b0 0B010000 		.4byte	.LVL102-1
+ 3110 06b4 0100     		.2byte	0x1
+ 3111 06b6 51       		.byte	0x51
+ 3112 06b7 1A010000 		.4byte	.LVL103
+ 3113 06bb 28010000 		.4byte	.LVL104
+ 3114 06bf 0200     		.2byte	0x2
+ 3115 06c1 30       		.byte	0x30
+ 3116 06c2 9F       		.byte	0x9f
+ 3117 06c3 00000000 		.4byte	0
+ 3118 06c7 00000000 		.4byte	0
+ 3119              	.LLST36:
+ 3120 06cb EE010000 		.4byte	.LVL129
+ 3121 06cf F3010000 		.4byte	.LVL130-1
+ 3122 06d3 0100     		.2byte	0x1
+ 3123 06d5 50       		.byte	0x50
+ 3124 06d6 F6010000 		.4byte	.LVL131
+ 3125 06da 04020000 		.4byte	.LVL132
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 63
+
+
+ 3126 06de 0100     		.2byte	0x1
+ 3127 06e0 50       		.byte	0x50
+ 3128 06e1 04020000 		.4byte	.LVL132
+ 3129 06e5 21020000 		.4byte	.LVL134-1
+ 3130 06e9 0100     		.2byte	0x1
+ 3131 06eb 52       		.byte	0x52
+ 3132 06ec 21020000 		.4byte	.LVL134-1
+ 3133 06f0 58020000 		.4byte	.LVL143
+ 3134 06f4 0300     		.2byte	0x3
+ 3135 06f6 91       		.byte	0x91
+ 3136 06f7 F07E     		.sleb128 -144
+ 3137 06f9 00000000 		.4byte	0
+ 3138 06fd 00000000 		.4byte	0
+ 3139              	.LLST37:
+ 3140 0701 1C020000 		.4byte	.LVL133
+ 3141 0705 21020000 		.4byte	.LVL134-1
+ 3142 0709 0100     		.2byte	0x1
+ 3143 070b 50       		.byte	0x50
+ 3144 070c 24020000 		.4byte	.LVL135
+ 3145 0710 2C020000 		.4byte	.LVL136
+ 3146 0714 0100     		.2byte	0x1
+ 3147 0716 50       		.byte	0x50
+ 3148 0717 2C020000 		.4byte	.LVL136
+ 3149 071b 36020000 		.4byte	.LVL140
+ 3150 071f 0100     		.2byte	0x1
+ 3151 0721 51       		.byte	0x51
+ 3152 0722 36020000 		.4byte	.LVL140
+ 3153 0726 46020000 		.4byte	.LVL141
+ 3154 072a 0600     		.2byte	0x6
+ 3155 072c 73       		.byte	0x73
+ 3156 072d 00       		.sleb128 0
+ 3157 072e 70       		.byte	0x70
+ 3158 072f 00       		.sleb128 0
+ 3159 0730 1C       		.byte	0x1c
+ 3160 0731 9F       		.byte	0x9f
+ 3161 0732 00000000 		.4byte	0
+ 3162 0736 00000000 		.4byte	0
+ 3163              	.LLST38:
+ 3164 073a 9E020000 		.4byte	.LVL152
+ 3165 073e A4020000 		.4byte	.LVL153
+ 3166 0742 0100     		.2byte	0x1
+ 3167 0744 53       		.byte	0x53
+ 3168 0745 A4020000 		.4byte	.LVL153
+ 3169 0749 A6020000 		.4byte	.LVL154
+ 3170 074d 0200     		.2byte	0x2
+ 3171 074f 72       		.byte	0x72
+ 3172 0750 00       		.sleb128 0
+ 3173 0751 A6020000 		.4byte	.LVL154
+ 3174 0755 A8020000 		.4byte	.LVL155
+ 3175 0759 0400     		.2byte	0x4
+ 3176 075b 91       		.byte	0x91
+ 3177 075c FC7E     		.sleb128 -132
+ 3178 075e 06       		.byte	0x6
+ 3179 075f 00000000 		.4byte	0
+ 3180 0763 00000000 		.4byte	0
+ 3181              	.LLST39:
+ 3182 0767 82010000 		.4byte	.LVL118
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 64
+
+
+ 3183 076b 9E010000 		.4byte	.LVL120
+ 3184 076f 0500     		.2byte	0x5
+ 3185 0771 40       		.byte	0x40
+ 3186 0772 44       		.byte	0x44
+ 3187 0773 24       		.byte	0x24
+ 3188 0774 1F       		.byte	0x1f
+ 3189 0775 9F       		.byte	0x9f
+ 3190 0776 9E010000 		.4byte	.LVL120
+ 3191 077a BE010000 		.4byte	.LVL126
+ 3192 077e 0100     		.2byte	0x1
+ 3193 0780 55       		.byte	0x55
+ 3194 0781 BE010000 		.4byte	.LVL126
+ 3195 0785 C6010000 		.4byte	.LVL127
+ 3196 0789 0500     		.2byte	0x5
+ 3197 078b 40       		.byte	0x40
+ 3198 078c 44       		.byte	0x44
+ 3199 078d 24       		.byte	0x24
+ 3200 078e 1F       		.byte	0x1f
+ 3201 078f 9F       		.byte	0x9f
+ 3202 0790 C6010000 		.4byte	.LVL127
+ 3203 0794 34020000 		.4byte	.LVL139
+ 3204 0798 0100     		.2byte	0x1
+ 3205 079a 55       		.byte	0x55
+ 3206 079b 00000000 		.4byte	0
+ 3207 079f 00000000 		.4byte	0
+ 3208              	.LLST40:
+ 3209 07a3 82010000 		.4byte	.LVL118
+ 3210 07a7 9E010000 		.4byte	.LVL120
+ 3211 07ab 0500     		.2byte	0x5
+ 3212 07ad 40       		.byte	0x40
+ 3213 07ae 44       		.byte	0x44
+ 3214 07af 24       		.byte	0x24
+ 3215 07b0 1F       		.byte	0x1f
+ 3216 07b1 9F       		.byte	0x9f
+ 3217 07b2 9E010000 		.4byte	.LVL120
+ 3218 07b6 BE010000 		.4byte	.LVL126
+ 3219 07ba 0100     		.2byte	0x1
+ 3220 07bc 54       		.byte	0x54
+ 3221 07bd BE010000 		.4byte	.LVL126
+ 3222 07c1 C6010000 		.4byte	.LVL127
+ 3223 07c5 0500     		.2byte	0x5
+ 3224 07c7 40       		.byte	0x40
+ 3225 07c8 44       		.byte	0x44
+ 3226 07c9 24       		.byte	0x24
+ 3227 07ca 1F       		.byte	0x1f
+ 3228 07cb 9F       		.byte	0x9f
+ 3229 07cc C6010000 		.4byte	.LVL127
+ 3230 07d0 30020000 		.4byte	.LVL137
+ 3231 07d4 0100     		.2byte	0x1
+ 3232 07d6 54       		.byte	0x54
+ 3233 07d7 00000000 		.4byte	0
+ 3234 07db 00000000 		.4byte	0
+ 3235              	.LLST41:
+ 3236 07df 16000000 		.4byte	.LVL64
+ 3237 07e3 82010000 		.4byte	.LVL118
+ 3238 07e7 0200     		.2byte	0x2
+ 3239 07e9 30       		.byte	0x30
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 65
+
+
+ 3240 07ea 9F       		.byte	0x9f
+ 3241 07eb 82010000 		.4byte	.LVL118
+ 3242 07ef B8010000 		.4byte	.LVL123
+ 3243 07f3 0100     		.2byte	0x1
+ 3244 07f5 57       		.byte	0x57
+ 3245 07f6 BA010000 		.4byte	.LVL124
+ 3246 07fa B6020000 		.4byte	.LVL159
+ 3247 07fe 0100     		.2byte	0x1
+ 3248 0800 57       		.byte	0x57
+ 3249 0801 00000000 		.4byte	0
+ 3250 0805 00000000 		.4byte	0
+ 3251              	.LLST42:
+ 3252 0809 16000000 		.4byte	.LVL64
+ 3253 080d 82010000 		.4byte	.LVL118
+ 3254 0811 0200     		.2byte	0x2
+ 3255 0813 30       		.byte	0x30
+ 3256 0814 9F       		.byte	0x9f
+ 3257 0815 82010000 		.4byte	.LVL118
+ 3258 0819 AA010000 		.4byte	.LVL121
+ 3259 081d 0100     		.2byte	0x1
+ 3260 081f 56       		.byte	0x56
+ 3261 0820 AC010000 		.4byte	.LVL122
+ 3262 0824 B6020000 		.4byte	.LVL159
+ 3263 0828 0100     		.2byte	0x1
+ 3264 082a 56       		.byte	0x56
+ 3265 082b 00000000 		.4byte	0
+ 3266 082f 00000000 		.4byte	0
+ 3267              	.LLST43:
+ 3268 0833 40010000 		.4byte	.LVL106
+ 3269 0837 8C020000 		.4byte	.LVL148
+ 3270 083b 0200     		.2byte	0x2
+ 3271 083d 30       		.byte	0x30
+ 3272 083e 9F       		.byte	0x9f
+ 3273 083f 8C020000 		.4byte	.LVL148
+ 3274 0843 8E020000 		.4byte	.LVL149
+ 3275 0847 0100     		.2byte	0x1
+ 3276 0849 53       		.byte	0x53
+ 3277 084a 8E020000 		.4byte	.LVL149
+ 3278 084e 94020000 		.4byte	.LVL151
+ 3279 0852 0200     		.2byte	0x2
+ 3280 0854 30       		.byte	0x30
+ 3281 0855 9F       		.byte	0x9f
+ 3282 0856 94020000 		.4byte	.LVL151
+ 3283 085a 9E020000 		.4byte	.LVL152
+ 3284 085e 0100     		.2byte	0x1
+ 3285 0860 53       		.byte	0x53
+ 3286 0861 AA020000 		.4byte	.LVL156
+ 3287 0865 AC020000 		.4byte	.LVL157
+ 3288 0869 0100     		.2byte	0x1
+ 3289 086b 53       		.byte	0x53
+ 3290 086c AC020000 		.4byte	.LVL157
+ 3291 0870 AE020000 		.4byte	.LVL158
+ 3292 0874 0300     		.2byte	0x3
+ 3293 0876 72       		.byte	0x72
+ 3294 0877 03       		.sleb128 3
+ 3295 0878 9F       		.byte	0x9f
+ 3296 0879 00000000 		.4byte	0
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 66
+
+
+ 3297 087d 00000000 		.4byte	0
+ 3298              	.LLST44:
+ 3299 0881 32020000 		.4byte	.LVL138
+ 3300 0885 58020000 		.4byte	.LVL143
+ 3301 0889 0100     		.2byte	0x1
+ 3302 088b 54       		.byte	0x54
+ 3303 088c 00000000 		.4byte	0
+ 3304 0890 00000000 		.4byte	0
+ 3305              	.LLST45:
+ 3306 0894 36020000 		.4byte	.LVL140
+ 3307 0898 4B020000 		.4byte	.LVL142-1
+ 3308 089c 0100     		.2byte	0x1
+ 3309 089e 51       		.byte	0x51
+ 3310 089f 00000000 		.4byte	0
+ 3311 08a3 00000000 		.4byte	0
+ 3312              		.section	.debug_aranges,"",%progbits
+ 3313 0000 44000000 		.4byte	0x44
+ 3314 0004 0200     		.2byte	0x2
+ 3315 0006 00000000 		.4byte	.Ldebug_info0
+ 3316 000a 04       		.byte	0x4
+ 3317 000b 00       		.byte	0
+ 3318 000c 0000     		.2byte	0
+ 3319 000e 0000     		.2byte	0
+ 3320 0010 00000000 		.4byte	.LFB34
+ 3321 0014 80000000 		.4byte	.LFE34-.LFB34
+ 3322 0018 00000000 		.4byte	.LFB36
+ 3323 001c 34000000 		.4byte	.LFE36-.LFB36
+ 3324 0020 00000000 		.4byte	.LFB37
+ 3325 0024 40000000 		.4byte	.LFE37-.LFB37
+ 3326 0028 00000000 		.4byte	.LFB35
+ 3327 002c 7A000000 		.4byte	.LFE35-.LFB35
+ 3328 0030 00000000 		.4byte	.LFB33
+ 3329 0034 30000000 		.4byte	.LFE33-.LFB33
+ 3330 0038 00000000 		.4byte	.LFB32
+ 3331 003c D8020000 		.4byte	.LFE32-.LFB32
+ 3332 0040 00000000 		.4byte	0
+ 3333 0044 00000000 		.4byte	0
+ 3334              		.section	.debug_ranges,"",%progbits
+ 3335              	.Ldebug_ranges0:
+ 3336 0000 00000000 		.4byte	.LFB34
+ 3337 0004 80000000 		.4byte	.LFE34
+ 3338 0008 00000000 		.4byte	.LFB36
+ 3339 000c 34000000 		.4byte	.LFE36
+ 3340 0010 00000000 		.4byte	.LFB37
+ 3341 0014 40000000 		.4byte	.LFE37
+ 3342 0018 00000000 		.4byte	.LFB35
+ 3343 001c 7A000000 		.4byte	.LFE35
+ 3344 0020 00000000 		.4byte	.LFB33
+ 3345 0024 30000000 		.4byte	.LFE33
+ 3346 0028 00000000 		.4byte	.LFB32
+ 3347 002c D8020000 		.4byte	.LFE32
+ 3348 0030 00000000 		.4byte	0
+ 3349 0034 00000000 		.4byte	0
+ 3350              		.section	.debug_line,"",%progbits
+ 3351              	.Ldebug_line0:
+ 3352 0000 24030000 		.section	.debug_str,"MS",%progbits,1
+ 3352      02002401 
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 67
+
+
+ 3352      00000201 
+ 3352      FB0E0D00 
+ 3352      01010101 
+ 3353              	.LASF33:
+ 3354 0000 6D617869 		.ascii	"maxim_remove_close_peaks\000"
+ 3354      6D5F7265 
+ 3354      6D6F7665 
+ 3354      5F636C6F 
+ 3354      73655F70 
+ 3355              	.LASF17:
+ 3356 0019 666C6F61 		.ascii	"float\000"
+ 3356      7400
+ 3357              	.LASF55:
+ 3358 001f 6E5F795F 		.ascii	"n_y_ac\000"
+ 3358      616300
+ 3359              	.LASF13:
+ 3360 0026 696E7438 		.ascii	"int8_t\000"
+ 3360      5F7400
+ 3361              	.LASF4:
+ 3362 002d 73686F72 		.ascii	"short int\000"
+ 3362      7420696E 
+ 3362      7400
+ 3363              	.LASF21:
+ 3364 0037 73697A65 		.ascii	"sizetype\000"
+ 3364      74797065 
+ 3364      00
+ 3365              	.LASF47:
+ 3366 0040 7063685F 		.ascii	"pch_hr_valid\000"
+ 3366      68725F76 
+ 3366      616C6964 
+ 3366      00
+ 3367              	.LASF38:
+ 3368 004d 6D617869 		.ascii	"maxim_find_peaks\000"
+ 3368      6D5F6669 
+ 3368      6E645F70 
+ 3368      65616B73 
+ 3368      00
+ 3369              	.LASF70:
+ 3370 005e 73706F32 		.ascii	"spo2_algorithm.c\000"
+ 3370      5F616C67 
+ 3370      6F726974 
+ 3370      686D2E63 
+ 3370      00
+ 3371              	.LASF51:
+ 3372 006f 6E5F6D69 		.ascii	"n_middle_idx\000"
+ 3372      64646C65 
+ 3372      5F696478 
+ 3372      00
+ 3373              	.LASF57:
+ 3374 007c 6E5F7370 		.ascii	"n_spo2_calc\000"
+ 3374      6F325F63 
+ 3374      616C6300 
+ 3375              	.LASF20:
+ 3376 0088 6C6F6E67 		.ascii	"long double\000"
+ 3376      20646F75 
+ 3376      626C6500 
+ 3377              	.LASF8:
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 68
+
+
+ 3378 0094 5F5F7569 		.ascii	"__uint32_t\000"
+ 3378      6E743332 
+ 3378      5F7400
+ 3379              	.LASF29:
+ 3380 009f 6D617869 		.ascii	"maxim_sort_ascend\000"
+ 3380      6D5F736F 
+ 3380      72745F61 
+ 3380      7363656E 
+ 3380      6400
+ 3381              	.LASF31:
+ 3382 00b1 6D617869 		.ascii	"maxim_sort_indices_descend\000"
+ 3382      6D5F736F 
+ 3382      72745F69 
+ 3382      6E646963 
+ 3382      65735F64 
+ 3383              	.LASF69:
+ 3384 00cc 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 3384      43313120 
+ 3384      352E342E 
+ 3384      31203230 
+ 3384      31363036 
+ 3385 00ff 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m0 -mthumb -g -O"
+ 3385      20726576 
+ 3385      6973696F 
+ 3385      6E203233 
+ 3385      37373135 
+ 3386 0132 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 3386      66756E63 
+ 3386      74696F6E 
+ 3386      2D736563 
+ 3386      74696F6E 
+ 3387              	.LASF14:
+ 3388 015a 75696E74 		.ascii	"uint8_t\000"
+ 3388      385F7400 
+ 3389              	.LASF54:
+ 3390 0162 6E5F7065 		.ascii	"n_peak_interval_sum\000"
+ 3390      616B5F69 
+ 3390      6E746572 
+ 3390      76616C5F 
+ 3390      73756D00 
+ 3391              	.LASF36:
+ 3392 0176 6E5F6F6C 		.ascii	"n_old_npks\000"
+ 3392      645F6E70 
+ 3392      6B7300
+ 3393              	.LASF53:
+ 3394 0181 616E5F69 		.ascii	"an_ir_valley_locs\000"
+ 3394      725F7661 
+ 3394      6C6C6579 
+ 3394      5F6C6F63 
+ 3394      7300
+ 3395              	.LASF41:
+ 3396 0193 70756E5F 		.ascii	"pun_ir_buffer\000"
+ 3396      69725F62 
+ 3396      75666665 
+ 3396      7200
+ 3397              	.LASF30:
+ 3398 01a1 6E5F7465 		.ascii	"n_temp\000"
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 69
+
+
+ 3398      6D7000
+ 3399              	.LASF40:
+ 3400 01a8 6D617869 		.ascii	"maxim_heart_rate_and_oxygen_saturation\000"
+ 3400      6D5F6865 
+ 3400      6172745F 
+ 3400      72617465 
+ 3400      5F616E64 
+ 3401              	.LASF37:
+ 3402 01cf 6E5F6469 		.ascii	"n_dist\000"
+ 3402      737400
+ 3403              	.LASF49:
+ 3404 01d6 6E5F695F 		.ascii	"n_i_ratio_count\000"
+ 3404      72617469 
+ 3404      6F5F636F 
+ 3404      756E7400 
+ 3405              	.LASF43:
+ 3406 01e6 70756E5F 		.ascii	"pun_red_buffer\000"
+ 3406      7265645F 
+ 3406      62756666 
+ 3406      657200
+ 3407              	.LASF10:
+ 3408 01f5 6C6F6E67 		.ascii	"long long int\000"
+ 3408      206C6F6E 
+ 3408      6720696E 
+ 3408      7400
+ 3409              	.LASF7:
+ 3410 0203 6C6F6E67 		.ascii	"long int\000"
+ 3410      20696E74 
+ 3410      00
+ 3411              	.LASF45:
+ 3412 020c 7063685F 		.ascii	"pch_spo2_valid\000"
+ 3412      73706F32 
+ 3412      5F76616C 
+ 3412      696400
+ 3413              	.LASF46:
+ 3414 021b 706E5F68 		.ascii	"pn_heart_rate\000"
+ 3414      65617274 
+ 3414      5F726174 
+ 3414      6500
+ 3415              	.LASF34:
+ 3416 0229 706E5F6E 		.ascii	"pn_npks\000"
+ 3416      706B7300 
+ 3417              	.LASF50:
+ 3418 0231 6E5F6578 		.ascii	"n_exact_ir_valley_locs_count\000"
+ 3418      6163745F 
+ 3418      69725F76 
+ 3418      616C6C65 
+ 3418      795F6C6F 
+ 3419              	.LASF60:
+ 3420 024e 6E5F795F 		.ascii	"n_y_dc_max_idx\000"
+ 3420      64635F6D 
+ 3420      61785F69 
+ 3420      647800
+ 3421              	.LASF3:
+ 3422 025d 756E7369 		.ascii	"unsigned char\000"
+ 3422      676E6564 
+ 3422      20636861 
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 70
+
+
+ 3422      7200
+ 3423              	.LASF32:
+ 3424 026b 706E5F69 		.ascii	"pn_indx\000"
+ 3424      6E647800 
+ 3425              	.LASF26:
+ 3426 0273 6E5F6D69 		.ascii	"n_min_height\000"
+ 3426      6E5F6865 
+ 3426      69676874 
+ 3426      00
+ 3427              	.LASF44:
+ 3428 0280 706E5F73 		.ascii	"pn_spo2\000"
+ 3428      706F3200 
+ 3429              	.LASF59:
+ 3430 0288 6E5F785F 		.ascii	"n_x_dc_max\000"
+ 3430      64635F6D 
+ 3430      617800
+ 3431              	.LASF11:
+ 3432 0293 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 3432      206C6F6E 
+ 3432      6720756E 
+ 3432      7369676E 
+ 3432      65642069 
+ 3433              	.LASF16:
+ 3434 02aa 75696E74 		.ascii	"uint32_t\000"
+ 3434      33325F74 
+ 3434      00
+ 3435              	.LASF12:
+ 3436 02b3 756E7369 		.ascii	"unsigned int\000"
+ 3436      676E6564 
+ 3436      20696E74 
+ 3436      00
+ 3437              	.LASF35:
+ 3438 02c0 6E5F6D69 		.ascii	"n_min_distance\000"
+ 3438      6E5F6469 
+ 3438      7374616E 
+ 3438      636500
+ 3439              	.LASF71:
+ 3440 02cf 433A5C55 		.ascii	"C:\\Users\\joshw\\Desktop\\EECE3015\\eece3015-heart"
+ 3440      73657273 
+ 3440      5C6A6F73 
+ 3440      68775C44 
+ 3440      65736B74 
+ 3441 02fd 2D726174 		.ascii	"-rate-monitor\\FinalDesignProject\\FinalDesignProje"
+ 3441      652D6D6F 
+ 3441      6E69746F 
+ 3441      725C4669 
+ 3441      6E616C44 
+ 3442 032e 63742E63 		.ascii	"ct.cydsn\000"
+ 3442      7964736E 
+ 3442      00
+ 3443              	.LASF0:
+ 3444 0337 5F5F696E 		.ascii	"__int8_t\000"
+ 3444      74385F74 
+ 3444      00
+ 3445              	.LASF65:
+ 3446 0340 6E5F6465 		.ascii	"n_denom\000"
+ 3446      6E6F6D00 
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 71
+
+
+ 3447              	.LASF19:
+ 3448 0348 63686172 		.ascii	"char\000"
+ 3448      00
+ 3449              	.LASF15:
+ 3450 034d 696E7433 		.ascii	"int32_t\000"
+ 3450      325F7400 
+ 3451              	.LASF5:
+ 3452 0355 73686F72 		.ascii	"short unsigned int\000"
+ 3452      7420756E 
+ 3452      7369676E 
+ 3452      65642069 
+ 3452      6E7400
+ 3453              	.LASF66:
+ 3454 0368 7563685F 		.ascii	"uch_spo2_table\000"
+ 3454      73706F32 
+ 3454      5F746162 
+ 3454      6C6500
+ 3455              	.LASF62:
+ 3456 0377 616E5F72 		.ascii	"an_ratio\000"
+ 3456      6174696F 
+ 3456      00
+ 3457              	.LASF48:
+ 3458 0380 756E5F69 		.ascii	"un_ir_mean\000"
+ 3458      725F6D65 
+ 3458      616E00
+ 3459              	.LASF9:
+ 3460 038b 6C6F6E67 		.ascii	"long unsigned int\000"
+ 3460      20756E73 
+ 3460      69676E65 
+ 3460      6420696E 
+ 3460      7400
+ 3461              	.LASF56:
+ 3462 039d 6E5F785F 		.ascii	"n_x_ac\000"
+ 3462      616300
+ 3463              	.LASF52:
+ 3464 03a4 6E5F7468 		.ascii	"n_th1\000"
+ 3464      3100
+ 3465              	.LASF61:
+ 3466 03aa 6E5F785F 		.ascii	"n_x_dc_max_idx\000"
+ 3466      64635F6D 
+ 3466      61785F69 
+ 3466      647800
+ 3467              	.LASF63:
+ 3468 03b9 6E5F7261 		.ascii	"n_ratio_average\000"
+ 3468      74696F5F 
+ 3468      61766572 
+ 3468      61676500 
+ 3469              	.LASF27:
+ 3470 03c9 6E5F7769 		.ascii	"n_width\000"
+ 3470      64746800 
+ 3471              	.LASF24:
+ 3472 03d1 706E5F78 		.ascii	"pn_x\000"
+ 3472      00
+ 3473              	.LASF6:
+ 3474 03d6 5F5F696E 		.ascii	"__int32_t\000"
+ 3474      7433325F 
+ 3474      7400
+ARM GAS  C:\Users\joshw\AppData\Local\Temp\ccyVVHcx.s 			page 72
+
+
+ 3475              	.LASF39:
+ 3476 03e0 6E5F6D61 		.ascii	"n_max_num\000"
+ 3476      785F6E75 
+ 3476      6D00
+ 3477              	.LASF2:
+ 3478 03ea 7369676E 		.ascii	"signed char\000"
+ 3478      65642063 
+ 3478      68617200 
+ 3479              	.LASF64:
+ 3480 03f6 6E5F6E75 		.ascii	"n_nume\000"
+ 3480      6D6500
+ 3481              	.LASF58:
+ 3482 03fd 6E5F795F 		.ascii	"n_y_dc_max\000"
+ 3482      64635F6D 
+ 3482      617800
+ 3483              	.LASF28:
+ 3484 0408 6D617869 		.ascii	"maxim_peaks_above_min_height\000"
+ 3484      6D5F7065 
+ 3484      616B735F 
+ 3484      61626F76 
+ 3484      655F6D69 
+ 3485              	.LASF18:
+ 3486 0425 646F7562 		.ascii	"double\000"
+ 3486      6C6500
+ 3487              	.LASF42:
+ 3488 042c 6E5F6972 		.ascii	"n_ir_buffer_length\000"
+ 3488      5F627566 
+ 3488      6665725F 
+ 3488      6C656E67 
+ 3488      746800
+ 3489              	.LASF67:
+ 3490 043f 616E5F78 		.ascii	"an_x\000"
+ 3490      00
+ 3491              	.LASF68:
+ 3492 0444 616E5F79 		.ascii	"an_y\000"
+ 3492      00
+ 3493              	.LASF22:
+ 3494 0449 706E5F6C 		.ascii	"pn_locs\000"
+ 3494      6F637300 
+ 3495              	.LASF23:
+ 3496 0451 6E5F6E70 		.ascii	"n_npks\000"
+ 3496      6B7300
+ 3497              	.LASF1:
+ 3498 0458 5F5F7569 		.ascii	"__uint8_t\000"
+ 3498      6E74385F 
+ 3498      7400
+ 3499              	.LASF25:
+ 3500 0462 6E5F7369 		.ascii	"n_size\000"
+ 3500      7A6500
+ 3501              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran
