@@ -1,5 +1,5 @@
 /*******************************************************************************
-* File Name: ON_OFF.c  
+* File Name: ISR_1.c  
 * Version 1.71
 *
 *  Description:
@@ -18,15 +18,15 @@
 
 #include <cydevice_trm.h>
 #include <CyLib.h>
-#include <ON_OFF.h>
+#include <ISR_1.h>
 #include "cyapicallbacks.h"
 
-#if !defined(ON_OFF__REMOVED) /* Check for removal by optimization */
+#if !defined(ISR_1__REMOVED) /* Check for removal by optimization */
 
 /*******************************************************************************
 *  Place your includes, defines and code here 
 ********************************************************************************/
-/* `#START ON_OFF_intc` */
+/* `#START ISR_1_intc` */
 
 /* `#END` */
 
@@ -37,7 +37,7 @@ CY_ISR_PROTO(IntDefaultHandler);
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_Start
+* Function Name: ISR_1_Start
 ********************************************************************************
 *
 * Summary:
@@ -53,24 +53,24 @@ CY_ISR_PROTO(IntDefaultHandler);
 *   None
 *
 *******************************************************************************/
-void ON_OFF_Start(void)
+void ISR_1_Start(void)
 {
     /* For all we know the interrupt is active. */
-    ON_OFF_Disable();
+    ISR_1_Disable();
 
-    /* Set the ISR to point to the ON_OFF Interrupt. */
-    ON_OFF_SetVector(&ON_OFF_Interrupt);
+    /* Set the ISR to point to the ISR_1 Interrupt. */
+    ISR_1_SetVector(&ISR_1_Interrupt);
 
     /* Set the priority. */
-    ON_OFF_SetPriority((uint8)ON_OFF_INTC_PRIOR_NUMBER);
+    ISR_1_SetPriority((uint8)ISR_1_INTC_PRIOR_NUMBER);
 
     /* Enable it. */
-    ON_OFF_Enable();
+    ISR_1_Enable();
 }
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_StartEx
+* Function Name: ISR_1_StartEx
 ********************************************************************************
 *
 * Summary:
@@ -96,24 +96,24 @@ void ON_OFF_Start(void)
 *   None
 *
 *******************************************************************************/
-void ON_OFF_StartEx(cyisraddress address)
+void ISR_1_StartEx(cyisraddress address)
 {
     /* For all we know the interrupt is active. */
-    ON_OFF_Disable();
+    ISR_1_Disable();
 
-    /* Set the ISR to point to the ON_OFF Interrupt. */
-    ON_OFF_SetVector(address);
+    /* Set the ISR to point to the ISR_1 Interrupt. */
+    ISR_1_SetVector(address);
 
     /* Set the priority. */
-    ON_OFF_SetPriority((uint8)ON_OFF_INTC_PRIOR_NUMBER);
+    ISR_1_SetPriority((uint8)ISR_1_INTC_PRIOR_NUMBER);
 
     /* Enable it. */
-    ON_OFF_Enable();
+    ISR_1_Enable();
 }
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_Stop
+* Function Name: ISR_1_Stop
 ********************************************************************************
 *
 * Summary:
@@ -126,22 +126,22 @@ void ON_OFF_StartEx(cyisraddress address)
 *   None
 *
 *******************************************************************************/
-void ON_OFF_Stop(void)
+void ISR_1_Stop(void)
 {
     /* Disable this interrupt. */
-    ON_OFF_Disable();
+    ISR_1_Disable();
 
     /* Set the ISR to point to the passive one. */
-    ON_OFF_SetVector(&IntDefaultHandler);
+    ISR_1_SetVector(&IntDefaultHandler);
 }
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_Interrupt
+* Function Name: ISR_1_Interrupt
 ********************************************************************************
 *
 * Summary:
-*   The default Interrupt Service Routine for ON_OFF.
+*   The default Interrupt Service Routine for ISR_1.
 *
 *   Add custom code between the START and END comments to keep the next version
 *   of this file from over-writing your code.
@@ -156,27 +156,27 @@ void ON_OFF_Stop(void)
 *   None
 *
 *******************************************************************************/
-CY_ISR(ON_OFF_Interrupt)
+CY_ISR(ISR_1_Interrupt)
 {
-    #ifdef ON_OFF_INTERRUPT_INTERRUPT_CALLBACK
-        ON_OFF_Interrupt_InterruptCallback();
-    #endif /* ON_OFF_INTERRUPT_INTERRUPT_CALLBACK */ 
+    #ifdef ISR_1_INTERRUPT_INTERRUPT_CALLBACK
+        ISR_1_Interrupt_InterruptCallback();
+    #endif /* ISR_1_INTERRUPT_INTERRUPT_CALLBACK */ 
 
     /*  Place your Interrupt code here. */
-    /* `#START ON_OFF_Interrupt` */
+    /* `#START ISR_1_Interrupt` */
 
     /* `#END` */
 }
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_SetVector
+* Function Name: ISR_1_SetVector
 ********************************************************************************
 *
 * Summary:
-*   Change the ISR vector for the Interrupt. Note calling ON_OFF_Start
+*   Change the ISR vector for the Interrupt. Note calling ISR_1_Start
 *   will override any effect this method would have had. To set the vector 
-*   before the component has been started use ON_OFF_StartEx instead.
+*   before the component has been started use ISR_1_StartEx instead.
 * 
 *   When defining ISR functions, the CY_ISR and CY_ISR_PROTO macros should be 
 *   used to provide consistent definition across compilers:
@@ -196,14 +196,14 @@ CY_ISR(ON_OFF_Interrupt)
 *   None
 *
 *******************************************************************************/
-void ON_OFF_SetVector(cyisraddress address)
+void ISR_1_SetVector(cyisraddress address)
 {
-    CyRamVectors[CYINT_IRQ_BASE + ON_OFF__INTC_NUMBER] = address;
+    CyRamVectors[CYINT_IRQ_BASE + ISR_1__INTC_NUMBER] = address;
 }
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_GetVector
+* Function Name: ISR_1_GetVector
 ********************************************************************************
 *
 * Summary:
@@ -216,22 +216,22 @@ void ON_OFF_SetVector(cyisraddress address)
 *   Address of the ISR in the interrupt vector table.
 *
 *******************************************************************************/
-cyisraddress ON_OFF_GetVector(void)
+cyisraddress ISR_1_GetVector(void)
 {
-    return CyRamVectors[CYINT_IRQ_BASE + ON_OFF__INTC_NUMBER];
+    return CyRamVectors[CYINT_IRQ_BASE + ISR_1__INTC_NUMBER];
 }
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_SetPriority
+* Function Name: ISR_1_SetPriority
 ********************************************************************************
 *
 * Summary:
 *   Sets the Priority of the Interrupt. 
 *
-*   Note calling ON_OFF_Start or ON_OFF_StartEx will 
+*   Note calling ISR_1_Start or ISR_1_StartEx will 
 *   override any effect this API would have had. This API should only be called
-*   after ON_OFF_Start or ON_OFF_StartEx has been called. 
+*   after ISR_1_Start or ISR_1_StartEx has been called. 
 *   To set the initial priority for the component, use the Design-Wide Resources
 *   Interrupt Editor.
 *
@@ -246,20 +246,20 @@ cyisraddress ON_OFF_GetVector(void)
 *   None
 *
 *******************************************************************************/
-void ON_OFF_SetPriority(uint8 priority)
+void ISR_1_SetPriority(uint8 priority)
 {
 	uint8 interruptState;
-    uint32 priorityOffset = ((ON_OFF__INTC_NUMBER % 4u) * 8u) + 6u;
+    uint32 priorityOffset = ((ISR_1__INTC_NUMBER % 4u) * 8u) + 6u;
     
 	interruptState = CyEnterCriticalSection();
-    *ON_OFF_INTC_PRIOR = (*ON_OFF_INTC_PRIOR & (uint32)(~(uint32)ON_OFF__INTC_PRIOR_MASK)) |
+    *ISR_1_INTC_PRIOR = (*ISR_1_INTC_PRIOR & (uint32)(~(uint32)ISR_1__INTC_PRIOR_MASK)) |
                                     ((uint32)priority << priorityOffset);
 	CyExitCriticalSection(interruptState);
 }
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_GetPriority
+* Function Name: ISR_1_GetPriority
 ********************************************************************************
 *
 * Summary:
@@ -274,19 +274,19 @@ void ON_OFF_SetPriority(uint8 priority)
 *    PSoC 4: Priority is from 0 to 3.
 *
 *******************************************************************************/
-uint8 ON_OFF_GetPriority(void)
+uint8 ISR_1_GetPriority(void)
 {
     uint32 priority;
-	uint32 priorityOffset = ((ON_OFF__INTC_NUMBER % 4u) * 8u) + 6u;
+	uint32 priorityOffset = ((ISR_1__INTC_NUMBER % 4u) * 8u) + 6u;
 
-    priority = (*ON_OFF_INTC_PRIOR & ON_OFF__INTC_PRIOR_MASK) >> priorityOffset;
+    priority = (*ISR_1_INTC_PRIOR & ISR_1__INTC_PRIOR_MASK) >> priorityOffset;
 
     return (uint8)priority;
 }
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_Enable
+* Function Name: ISR_1_Enable
 ********************************************************************************
 *
 * Summary:
@@ -301,15 +301,15 @@ uint8 ON_OFF_GetPriority(void)
 *   None
 *
 *******************************************************************************/
-void ON_OFF_Enable(void)
+void ISR_1_Enable(void)
 {
     /* Enable the general interrupt. */
-    *ON_OFF_INTC_SET_EN = ON_OFF__INTC_MASK;
+    *ISR_1_INTC_SET_EN = ISR_1__INTC_MASK;
 }
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_GetState
+* Function Name: ISR_1_GetState
 ********************************************************************************
 *
 * Summary:
@@ -322,15 +322,15 @@ void ON_OFF_Enable(void)
 *   1 if enabled, 0 if disabled.
 *
 *******************************************************************************/
-uint8 ON_OFF_GetState(void)
+uint8 ISR_1_GetState(void)
 {
     /* Get the state of the general interrupt. */
-    return ((*ON_OFF_INTC_SET_EN & (uint32)ON_OFF__INTC_MASK) != 0u) ? 1u:0u;
+    return ((*ISR_1_INTC_SET_EN & (uint32)ISR_1__INTC_MASK) != 0u) ? 1u:0u;
 }
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_Disable
+* Function Name: ISR_1_Disable
 ********************************************************************************
 *
 * Summary:
@@ -343,15 +343,15 @@ uint8 ON_OFF_GetState(void)
 *   None
 *
 *******************************************************************************/
-void ON_OFF_Disable(void)
+void ISR_1_Disable(void)
 {
     /* Disable the general interrupt. */
-    *ON_OFF_INTC_CLR_EN = ON_OFF__INTC_MASK;
+    *ISR_1_INTC_CLR_EN = ISR_1__INTC_MASK;
 }
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_SetPending
+* Function Name: ISR_1_SetPending
 ********************************************************************************
 *
 * Summary:
@@ -370,14 +370,14 @@ void ON_OFF_Disable(void)
 *   interrupts).
 *
 *******************************************************************************/
-void ON_OFF_SetPending(void)
+void ISR_1_SetPending(void)
 {
-    *ON_OFF_INTC_SET_PD = ON_OFF__INTC_MASK;
+    *ISR_1_INTC_SET_PD = ISR_1__INTC_MASK;
 }
 
 
 /*******************************************************************************
-* Function Name: ON_OFF_ClearPending
+* Function Name: ISR_1_ClearPending
 ********************************************************************************
 *
 * Summary:
@@ -395,9 +395,9 @@ void ON_OFF_SetPending(void)
 *   None
 *
 *******************************************************************************/
-void ON_OFF_ClearPending(void)
+void ISR_1_ClearPending(void)
 {
-    *ON_OFF_INTC_CLR_PD = ON_OFF__INTC_MASK;
+    *ISR_1_INTC_CLR_PD = ISR_1__INTC_MASK;
 }
 
 #endif /* End check for removal by optimization */

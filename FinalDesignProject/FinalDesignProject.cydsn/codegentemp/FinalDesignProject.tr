@@ -16,7 +16,7 @@
 ##################################################################### 
                     1::Clock Frequency Summary
 ===================================================================== 
-Number of clocks: 12
+Number of clocks: 14
 Clock: CyHFClk             | N/A  | Target: 24.00 MHz  | 
 Clock: CyILO               | N/A  | Target: 0.03 MHz   | 
 Clock: CyIMO               | N/A  | Target: 24.00 MHz  | 
@@ -29,6 +29,8 @@ Clock: LED_PWM_Clock       | N/A  | Target: 0.00 MHz   |
 Clock: LED_PWM_Clock(FFB)  | N/A  | Target: 0.00 MHz   | 
 Clock: UART_SCBCLK         | N/A  | Target: 0.12 MHz   | 
 Clock: UART_SCBCLK(FFB)    | N/A  | Target: 0.12 MHz   | 
+Clock: f_clk               | N/A  | Target: 1.00 MHz   | 
+Clock: f_clk(FFB)          | N/A  | Target: 1.00 MHz   | 
 
  =====================================================================
                     End of Clock Frequency Summary
@@ -62,10 +64,10 @@ Port Name  Setup to Clk  Clock Name:Phase
 -----------------------3.2::Clock to Out
 ----------------------------------------
 
-Port Name    Clock to Out  Clock Name:Phase      
------------  ------------  --------------------  
-LED1(0)_PAD  22520         LED_PWM_Clock(FFB):R  
-LED2(0)_PAD  21835         LED_PWM_Clock(FFB):R  
+Port Name    Clock to Out  Clock Name:Phase  
+-----------  ------------  ----------------  
+LED1(0)_PAD  22520         f_clk(FFB):R      
+LED2(0)_PAD  21835         f_clk(FFB):R      
 
 
                          3.3::Pad to Pad

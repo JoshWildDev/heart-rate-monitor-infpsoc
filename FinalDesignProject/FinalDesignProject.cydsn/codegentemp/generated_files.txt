@@ -39,12 +39,10 @@
   <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\I2C_I2C_PVT.h" value="HEADER;;;;;I2C" />
   <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\I2C_PVT.h" value="HEADER;;;;;I2C" />
   <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\I2C_BOOT.h" value="HEADER;;;;;I2C" />
-  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\PWR_BTN.c" value="SOURCE_C;CortexM0;;;;PWR_BTN" />
-  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\PWR_BTN.h" value="HEADER;;;;;PWR_BTN" />
-  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\PWR_BTN_aliases.h" value="HEADER;;;;;PWR_BTN" />
-  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\PWR_BTN_PM.c" value="SOURCE_C;CortexM0;;;;PWR_BTN" />
-  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\ON_OFF.c" value="SOURCE_C;CortexM0;;;;ON_OFF" />
-  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\ON_OFF.h" value="HEADER;;;;;ON_OFF" />
+  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\ISR_1.c" value="SOURCE_C;CortexM0;;;;ISR_1" />
+  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\ISR_1.h" value="HEADER;;;;;ISR_1" />
+  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\f_clk.c" value="SOURCE_C;CortexM0;;;;f_clk" />
+  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\f_clk.h" value="HEADER;;;;;f_clk" />
   <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\LED1.c" value="SOURCE_C;CortexM0;;;;LED1" />
   <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\LED1.h" value="HEADER;;;;;LED1" />
   <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\LED1_aliases.h" value="HEADER;;;;;LED1" />
@@ -58,6 +56,9 @@
   <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\LED2_PM.c" value="SOURCE_C;CortexM0;;;;LED2" />
   <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\LED_PWM_Clock.c" value="SOURCE_C;CortexM0;;;;LED_PWM_Clock" />
   <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\LED_PWM_Clock.h" value="HEADER;;;;;LED_PWM_Clock" />
+  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\Timer_1.c" value="SOURCE_C;CortexM0;;;;Timer_1" />
+  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\Timer_1.h" value="HEADER;;;;;Timer_1" />
+  <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\Timer_1_PM.c" value="SOURCE_C;CortexM0;;;;Timer_1" />
   <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\UART_SCBCLK.c" value="SOURCE_C;CortexM0;;;;UART_SCBCLK" />
   <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\UART_SCBCLK.h" value="HEADER;;;;;UART_SCBCLK" />
   <file name="C:\Users\joshw\Desktop\EECE3015\eece3015-heart-rate-monitor\FinalDesignProject\FinalDesignProject.cydsn\codegentemp\UART_tx.c" value="SOURCE_C;CortexM0;;;;UART_tx" />

@@ -2,9 +2,15 @@ net ClockBlock_HFClk
 	term   ":m0s8clockblockcell.hfclk"
 	switch ":m0s8clockblockcell.hfclk==>:interrupt_10.clock"
 	term   ":interrupt_10.clock"
-	switch ":m0s8clockblockcell.hfclk==>:interrupt_0.clock"
-	term   ":interrupt_0.clock"
+	switch ":m0s8clockblockcell.hfclk==>:interrupt_17.clock"
+	term   ":interrupt_17.clock"
 end ClockBlock_HFClk
+net Net_102
+	term   ":m0s8tcpwmcell_1.interrupt"
+	switch ":m0s8tcpwmcell_1.interrupt==>:interrupt_idmux_17.in_0"
+	switch ":interrupt_idmux_17.interrupt_idmux_17__out==>:interrupt_17.interrupt"
+	term   ":interrupt_17.interrupt"
+end Net_102
 net Net_25
 	term   ":m0s8scbcell_0.interrupt"
 	switch ":m0s8scbcell_0.interrupt==>:interrupt_idmux_10.in_0"
@@ -25,19 +31,6 @@ net Net_42
 	switch ":m0s8scbcell_0__i2c_sda__hsiom_permute.m0s8scbcell_0__i2c_sda==>:m0s8scbcell_0.i2c_sda"
 	term   ":m0s8scbcell_0.i2c_sda"
 end Net_42
-net Net_46
-	term   ":ioport1:pin0.fb"
-	switch ":ioport1:pin0.fb==>:ioport1:hsiom_in0.hsiom0_in"
-	switch ":ioport1:hsiom_in0.dsi==>Stub-:dsiswitch_bottom@[DSI=(1,0)][side=bottom]:dsihc_bottom:v0+:dsiswitch_bottom@[DSI=(1,0)][side=bottom]:dsihc_bottom:v2"
-	switch "OStub-:dsiswitch_bottom@[DSI=(1,0)][side=bottom]:dsihc_bottom:v0+:dsiswitch_bottom@[DSI=(1,0)][side=bottom]:dsihc_bottom:v2"
-	switch ":dsiswitch_bottom@[DSI=(1,0)][side=bottom]:dsihc_bottom:2,89"
-	switch ":hvswitch@[UDB=(2,0)][side=left]:hseg_89_f"
-	switch ":dsiswitch_bottom@[DSI=(1,1)][side=bottom]:dsihc_bottom:109,89_f"
-	switch "IStub-:dsiswitch_bottom@[DSI=(1,1)][side=bottom]:dsihc_bottom:v105+:dsiswitch_bottom@[DSI=(1,1)][side=bottom]:dsihc_bottom:v107+:dsiswitch_bottom@[DSI=(1,1)][side=bottom]:dsihc_bottom:v109"
-	switch "Stub-:dsiswitch_bottom@[DSI=(1,1)][side=bottom]:dsihc_bottom:v105+:dsiswitch_bottom@[DSI=(1,1)][side=bottom]:dsihc_bottom:v107+:dsiswitch_bottom@[DSI=(1,1)][side=bottom]:dsihc_bottom:v109==>:interrupt_idmux_0.in_1"
-	switch ":interrupt_idmux_0.interrupt_idmux_0__out==>:interrupt_0.interrupt"
-	term   ":interrupt_0.interrupt"
-end Net_46
 net Net_89
 	term   ":m0s8tcpwmcell_0.line"
 	switch ":m0s8tcpwmcell_0.line==>Stub-:dsiswitch_top@[DSI=(0,0)][side=top]:dsihc_top:v24+:dsiswitch_top@[DSI=(0,0)][side=top]:dsihc_top:v26"

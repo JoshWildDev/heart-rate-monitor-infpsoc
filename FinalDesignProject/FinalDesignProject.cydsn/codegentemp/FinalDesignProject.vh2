@@ -2,7 +2,7 @@
 --	Conversion of FinalDesignProject.v to vh2:
 --
 --	Cypress Semiconductor - WARP Version 6.3 IR 41
---	Sat Nov 29 20:49:49 2025
+--	Mon Dec 01 00:23:00 2025
 --
 
 USE cypress.cypress.all;
@@ -106,11 +106,8 @@ SIGNAL Net_33 : bit;
 SIGNAL Net_36 : bit;
 SIGNAL Net_37 : bit;
 SIGNAL Net_44 : bit;
-SIGNAL tmpOE__PWR_BTN_net_0 : bit;
-SIGNAL Net_46 : bit;
-SIGNAL tmpIO_0__PWR_BTN_net_0 : bit;
-TERMINAL tmpSIOVREF__PWR_BTN_net_0 : bit;
-SIGNAL tmpINTERRUPT_0__PWR_BTN_net_0 : bit;
+SIGNAL Net_102 : bit;
+SIGNAL Net_100 : bit;
 SIGNAL tmpOE__LED1_net_0 : bit;
 SIGNAL Net_89 : bit;
 SIGNAL tmpFB_0__LED1_net_0 : bit;
@@ -134,6 +131,17 @@ SIGNAL tmpFB_0__LED2_net_0 : bit;
 SIGNAL tmpIO_0__LED2_net_0 : bit;
 TERMINAL tmpSIOVREF__LED2_net_0 : bit;
 SIGNAL tmpINTERRUPT_0__LED2_net_0 : bit;
+SIGNAL \Timer_1:Net_81\ : bit;
+SIGNAL \Timer_1:Net_75\ : bit;
+SIGNAL \Timer_1:Net_69\ : bit;
+SIGNAL \Timer_1:Net_66\ : bit;
+SIGNAL \Timer_1:Net_82\ : bit;
+SIGNAL \Timer_1:Net_72\ : bit;
+SIGNAL Net_109 : bit;
+SIGNAL Net_105 : bit;
+SIGNAL Net_99 : bit;
+SIGNAL Net_103 : bit;
+SIGNAL Net_104 : bit;
 BEGIN
 
 zero <=  ('0') ;
@@ -486,80 +494,20 @@ one <=  ('1') ;
 		sda=>Net_42,
 		tx_req=>Net_43,
 		rx_req=>Net_34);
-PWR_BTN:cy_psoc3_pins_v1_10
-	GENERIC MAP(id=>"8d318d8b-cf7b-4b6b-b02c-ab1c5c49d0ba",
-		drive_mode=>"010",
-		ibuf_enabled=>"1",
-		init_dr_st=>"1",
-		input_sync=>"0",
-		input_clk_en=>'0',
-		input_sync_mode=>"0",
-		intr_mode=>"00",
-		invert_in_clock=>'0',
-		invert_in_clock_en=>'0',
-		invert_in_reset=>'0',
-		invert_out_clock=>'0',
-		invert_out_clock_en=>'0',
-		invert_out_reset=>'0',
-		io_voltage=>"",
-		layout_mode=>"CONTIGUOUS",
-		output_conn=>"0",
-		output_sync=>"0",
-		output_clk_en=>'0',
-		output_mode=>"0",
-		output_reset=>'0',
-		output_clock_mode=>"0",
-		oe_sync=>"0",
-		oe_conn=>"0",
-		oe_reset=>'0',
-		pin_aliases=>"",
-		pin_mode=>"I",
-		por_state=>4,
-		sio_group_cnt=>0,
-		sio_hifreq=>"00000000",
-		sio_hyst=>"1",
-		sio_ibuf=>"00000000",
-		sio_info=>"00",
-		sio_obuf=>"00000000",
-		sio_refsel=>"00000000",
-		sio_vtrip=>"00000000",
-		sio_vohsel=>"00000000",
-		slew_rate=>"0",
-		spanning=>'0',
-		sw_only=>'0',
-		vtrip=>"00",
-		width=>1,
-		port_alias_required=>'0',
-		port_alias_group=>"",
-		use_annotation=>"0",
-		pa_in_clock=>-1,
-		pa_in_clock_en=>-1,
-		pa_in_reset=>-1,
-		pa_out_clock=>-1,
-		pa_out_clock_en=>-1,
-		pa_out_reset=>-1,
-		ovt_needed=>"0",
-		ovt_slew_control=>"00",
-		ovt_hyst_trim=>"0",
-		input_buffer_sel=>"00")
-	PORT MAP(oe=>(one),
-		y=>(zero),
-		fb=>Net_46,
-		analog=>(open),
-		io=>(tmpIO_0__PWR_BTN_net_0),
-		siovref=>(tmpSIOVREF__PWR_BTN_net_0),
-		annotation=>(open),
-		in_clock=>zero,
-		in_clock_en=>one,
-		in_reset=>zero,
-		out_clock=>zero,
-		out_clock_en=>one,
-		out_reset=>zero,
-		interrupt=>tmpINTERRUPT_0__PWR_BTN_net_0);
-ON_OFF:cy_isr_v1_0
+ISR_1:cy_isr_v1_0
 	GENERIC MAP(int_type=>"10",
 		is_nmi=>'0')
-	PORT MAP(int_signal=>Net_46);
+	PORT MAP(int_signal=>Net_102);
+f_clk:cy_clock_v1_0
+	GENERIC MAP(cy_registers=>"",
+		id=>"6baac5e0-6a01-4f84-aa68-2e51bae362a5",
+		source_clock_id=>"",
+		divisor=>0,
+		period=>"1000000000",
+		is_direct=>'0',
+		is_digital=>'0')
+	PORT MAP(clock_out=>Net_100,
+		dig_domain_out=>open);
 LED1:cy_psoc3_pins_v1_10
 	GENERIC MAP(id=>"e851a3b9-efb8-48be-bbb8-b303b216c393",
 		drive_mode=>"110",
@@ -724,5 +672,19 @@ LED_PWM_Clock:cy_clock_v1_0
 		is_digital=>'0')
 	PORT MAP(clock_out=>Net_86,
 		dig_domain_out=>open);
+\Timer_1:cy_m0s8_tcpwm_1\:cy_m0s8_tcpwm_v1_0
+	GENERIC MAP(cy_registers=>"")
+	PORT MAP(clock=>Net_100,
+		capture=>zero,
+		count=>one,
+		reload=>zero,
+		stop=>zero,
+		start=>zero,
+		underflow=>Net_109,
+		overflow=>Net_105,
+		compare_match=>Net_99,
+		line_out=>Net_103,
+		line_out_compl=>Net_104,
+		interrupt=>Net_102);
 
 END R_T_L;

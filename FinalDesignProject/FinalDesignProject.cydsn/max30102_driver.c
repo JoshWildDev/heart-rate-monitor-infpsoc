@@ -474,4 +474,41 @@ float MAX30105_readTemperatureF(void) {
     return temp * 1.8f + 32.0f;
 }
 
+void MAX30105_processSample(void) {
+    // Check if there is at least one sample
+    if (MAX30105_available() == 0) return;
+
+    // Start I2C read of FIFO
+    if (I2C_I2CMasterSendStart(MAX30105_I2C_ADDR, I2C_I2C_WRITE_XFER_MODE, MAX30105_TIMEOUT) != I2C_I2C_MSTR_NO_ERROR) return;
+    if (I2C_I2CMasterWriteByte(MAX30105_FIFODATA, MAX30105_TIMEOUT) != I2C_I2C_MSTR_NO_ERROR) return;
+    if (I2C_I2CMasterSendRestart(MAX30105_I2C_ADDR, I2C_I2C_READ_XFER_MODE, MAX30105_TIMEOUT) != I2C_I2C_MSTR_NO_ERROR) return;
+
+    uint8_t b1, b2, b3;
+
+    // RED LED
+    b1 = i2c_read8(I2C_I2C_ACK_DATA);
+    b2 = i2c_read8(I2C_I2C_ACK_DATA);
+    b3 = i2c_read8(I2C_I2C_ACK_DATA);
+    uint32_t redLong = ((uint32_t)b1 << 16) | ((uint32_t)b2 << 8) | b3;
+    redLong &= 0x3FFFF;
+    sense.head = (sense.head + 1) % STORAGE_SIZE;
+    sense.red[sense.head] = redLong;
+
+    // IR LED (if enabled)
+    if (activeLEDs > 1) {
+        b1 = i2c_read8(I2C_I2C_ACK_DATA);
+        b2 = i2c_read8(I2C_I2C_ACK_DATA);
+        b3 = i2c_read8(I2C_I2C_NAK_DATA);
+        uint32_t irLong = ((uint32_t)b1 << 16) | ((uint32_t)b2 << 8) | b3;
+        irLong &= 0x3FFFF;
+        sense.IR[sense.head] = irLong;
+    }
+
+    // Finished reading this one sample
+    MAX30105_nextSample();
+
+    I2C_I2CMasterSendStop(MAX30105_TIMEOUT);
+}
+
+
 /* [] END OF FILE */

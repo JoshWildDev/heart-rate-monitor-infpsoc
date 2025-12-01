@@ -292,7 +292,6 @@ void SSD1306_SendData(const uint8_t *data, uint16_t len) {
             commands as needed by one's own application.
 */
 void clearDisplay(void) {
-    UART_UartPutString("Clearing Display\n\r");
   memset(buffer, 0, SSD1306_WIDTH * ((SSD1306_HEIGHT + 7) / 8));
 }
 

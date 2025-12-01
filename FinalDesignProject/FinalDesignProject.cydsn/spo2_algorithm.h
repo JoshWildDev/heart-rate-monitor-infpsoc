@@ -17,9 +17,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define FreqS 25    // Sampling frequency
-#define BUFFER_SIZE (FreqS * 4)  // 100 samples = 4 seconds at 25Hz
-#define MA4_SIZE 4 // DO NOT CHANGE
+#define FreqS 50    // MUST be 50 to match your sampling rate!
+#define BUFFER_SIZE 100  // 2 seconds at 50Hz
+#define MA4_SIZE 4  // DO NOT CHANGE
 
 // uch_spo2_table is approximated as -45.060*ratioAverage*ratioAverage + 30.354*ratioAverage + 94.845;
 extern const uint8_t uch_spo2_table[184];

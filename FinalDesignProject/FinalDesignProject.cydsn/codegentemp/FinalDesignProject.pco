@@ -1,5 +1,5 @@
 # FinalDesignProject
-# 2025-11-30 02:49:50Z
+# 2025-12-01 06:23:01Z
 
 # IO_2@[IOP=(3)][IoId=(2)] is reserved: SWDDebugEnabled
 dont_use_io iocell 3 2
@@ -11,11 +11,11 @@ set_io "\UART:tx(0)\" iocell 0 5
 set_io "\UART:rx(0)\" iocell 0 4
 set_io "\I2C:sda(0)\" iocell 4 1
 set_io "\I2C:scl(0)\" iocell 4 0
-set_io "PWR_BTN(0)" iocell 1 0
 set_io "LED1(0)" iocell 0 2
 set_io "LED2(0)" iocell 1 6
 set_location "\UART:SCB\" m0s8scbcell -1 -1 1
 set_location "\I2C:SCB_IRQ\" interrupt -1 -1 10
 set_location "\I2C:SCB\" m0s8scbcell -1 -1 0
-set_location "ON_OFF" interrupt -1 -1 0
+set_location "ISR_1" interrupt -1 -1 17
 set_location "\LED_PWM:cy_m0s8_tcpwm_1\" m0s8tcpwmcell -1 -1 0
+set_location "\Timer_1:cy_m0s8_tcpwm_1\" m0s8tcpwmcell -1 -1 1

@@ -188,6 +188,8 @@ void MAX30105_bitMask(uint8_t reg, uint8_t mask, uint8_t thing);
 uint8_t MAX30105_getWritePointer(void);
 uint8_t MAX30105_getReadPointer(void);
 
+void MAX30105_processSample(void);
+
 #endif // MAX30105_H
 
 /* [] END OF FILE */

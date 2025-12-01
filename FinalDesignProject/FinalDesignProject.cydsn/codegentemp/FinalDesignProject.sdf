@@ -1,6 +1,6 @@
 (DELAYFILE
  (SDFVERSION "IEEE 1497 4.0")
- (DATE "2025-11-30T02:49:50Z")
+ (DATE "2025-12-01T06:23:02Z")
  (DESIGN "FinalDesignProject")
  (VENDOR "Cypress Semiconductor")
  (PROGRAM "PSoC Creator")
@@ -13,13 +13,14 @@
   (DELAY
    (ABSOLUTE
     (INTERCONNECT ClockBlock.hfclk \\I2C\:SCB_IRQ\\.clock (0.000:0.000:0.000))
-    (INTERCONNECT ClockBlock.hfclk ON_OFF.clock (0.000:0.000:0.000))
+    (INTERCONNECT ClockBlock.hfclk ISR_1.clock (0.000:0.000:0.000))
     (INTERCONNECT LED1\(0\).pad_out LED1\(0\).pad_in (0.000:0.000:0.000))
     (INTERCONNECT LED2\(0\).pad_out LED2\(0\).pad_in (0.000:0.000:0.000))
+    (INTERCONNECT ClockBlock.ff_div_9 \\Timer_1\:cy_m0s8_tcpwm_1\\.clock (0.000:0.000:0.000))
+    (INTERCONNECT \\Timer_1\:cy_m0s8_tcpwm_1\\.interrupt ISR_1.interrupt (1.000:1.000:1.000))
     (INTERCONNECT \\I2C\:SCB\\.interrupt \\I2C\:SCB_IRQ\\.interrupt (0.000:0.000:0.000))
     (INTERCONNECT \\I2C\:scl\(0\)\\.fb \\I2C\:SCB\\.i2c_scl (0.000:0.000:0.000))
     (INTERCONNECT \\I2C\:sda\(0\)\\.fb \\I2C\:SCB\\.i2c_sda (0.000:0.000:0.000))
-    (INTERCONNECT PWR_BTN\(0\).fb ON_OFF.interrupt (1.000:1.000:1.000))
     (INTERCONNECT ClockBlock.ff_div_8 \\LED_PWM\:cy_m0s8_tcpwm_1\\.clock (0.000:0.000:0.000))
     (INTERCONNECT \\LED_PWM\:cy_m0s8_tcpwm_1\\.line LED1\(0\).pin_input (5.984:5.984:5.984))
     (INTERCONNECT \\LED_PWM\:cy_m0s8_tcpwm_1\\.line_compl LED2\(0\).pin_input (5.710:5.710:5.710))
@@ -33,7 +34,6 @@
     (INTERCONNECT \\UART\:rx\(0\)_PAD\\ \\UART\:rx\(0\)\\.pad_in (0.000:0.000:0.000))
     (INTERCONNECT \\I2C\:sda\(0\)_PAD\\ \\I2C\:sda\(0\)\\.pad_in (0.000:0.000:0.000))
     (INTERCONNECT \\I2C\:scl\(0\)_PAD\\ \\I2C\:scl\(0\)\\.pad_in (0.000:0.000:0.000))
-    (INTERCONNECT PWR_BTN\(0\)_PAD PWR_BTN\(0\).pad_in (0.000:0.000:0.000))
     (INTERCONNECT LED1\(0\).pad_out LED1\(0\)_PAD (0.000:0.000:0.000))
     (INTERCONNECT LED1\(0\)_PAD LED1\(0\).pad_in (0.000:0.000:0.000))
     (INTERCONNECT LED2\(0\).pad_out LED2\(0\)_PAD (0.000:0.000:0.000))

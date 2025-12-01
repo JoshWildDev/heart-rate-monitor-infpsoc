@@ -22,290 +22,216 @@ Write code to successfully measure, filter, and display heart rate.
 #include "heartrate.h"
 #include "spo2_algorithm.h"
 
-#define BLINK_DELAY 500
-#define BUFFER_LENGTH 100  // Buffer for SpO2 calculation (4 seconds at 25Hz)
+#define BUFFER_LENGTH   100       // 2 seconds of data at 50Hz
+#define IR_THRESHOLD    20000     // Threshold to detect finger
+#define HISTORY_SIZE    5
 
-char8 stringBuffer[100];
-
-// Buffers for SpO2 calculation
+// Buffers
 uint32_t irBuffer[BUFFER_LENGTH];
 uint32_t redBuffer[BUFFER_LENGTH];
 
-// Heart rate variables
+// HR/SpO2 variables
 int32_t heartRate = 0;
 int8_t hrValid = 0;
-
-// SpO2 variables
 int32_t spo2 = 0;
 int8_t spo2Valid = 0;
 
-// Smoothing variables for display stability
-#define HISTORY_SIZE 3  // Reduced for faster response
+// Display smoothing
 int32_t hrHistory[HISTORY_SIZE] = {0};
 int32_t spo2History[HISTORY_SIZE] = {0};
 uint8_t historyIndex = 0;
 uint8_t historyCount = 0;
+int32_t displayHR = 0;
+int32_t displaySpO2 = 0;
+
+// Finger detection
+bool fingerDetected = false;
+uint8_t noFingerCount = 0;
+
+// FIFO buffer index
+uint8_t bufferIndex = 0;
+
+// Timer ISR flag
+volatile bool sampleReady = false;
+
+// Forward declaration
+void MAX30105_processSample(void);
+
+// Timer ISR: called at 50Hz
+CY_ISR(TimerISR_Handler)
+{
+    sampleReady = true;  // Set flag to read one sample in main loop
+    Timer_1_ClearInterrupt(Timer_1_INTR_MASK_TC); // Clear interrupt
+}
 
 int main(void)
 {
     CyGlobalIntEnable;
+
+    // Initialize peripherals
     I2C_Start();
     UART_Start();
     UART_UartPutString("\n\rStarting MAX30102 + OLED Program...\n\r");
-    
-    // ----------------------------------
-    // OLED INITIALIZATION
-    // ----------------------------------
+
     if (!init()) {
         UART_UartPutString("OLED init failed!\n\r");
-        for(;;) {
-            LED_PWM_Start();
-            CyDelay(1000);
-            LED_PWM_Stop();
-            CyDelay(1000);
-        }
+        for(;;) { LED_PWM_Start(); CyDelay(1000); LED_PWM_Stop(); CyDelay(1000); }
     }
-    
     clearDisplay();
-    drawString(0, 0, "MAX30102 Init...", SSD1306_WHITE);
-    refreshDisplay();
-    
-    // ----------------------------------
-    // MAX30102 INITIALIZATION
-    // ----------------------------------
-    if (!MAX30105_begin())
-    {
+
+    if (!MAX30105_begin()) {
         UART_UartPutString("ERROR: MAX30102 not detected!\r\n");
-        clearDisplay();
         drawString(0, 0, "MAX30102 ERROR", SSD1306_WHITE);
         refreshDisplay();
         for(;;);
     }
-    
-    UART_UartPutString("MAX30102 detected.\r\n");
-    
-    MAX30105_setup(
-        0x1F,   // LED brightness
-        4,      // sample average
-        2,      // red + IR for SpO2
-        25,     // sampleRate (Hz) - 25Hz to save memory
-        411,    // pulseWidth (us)
-        4096    // adcRange
-    );
-    
-    UART_UartPutString("MAX30102 configured.\r\n");
-    
-    clearDisplay();
-    drawString(0, 0, "Place finger on", SSD1306_WHITE);
-    drawString(0, 12, "sensor...", SSD1306_WHITE);
+
+    // MAX30102 setup
+    MAX30105_setup(0x3F, 4, 2, 50, 411, 4096);
+    drawString(0, 0, "Ready!", SSD1306_WHITE);
+    drawString(0, 12, "Place finger", SSD1306_WHITE);
     refreshDisplay();
-    CyDelay(2000);
-    
-    char buffer[64];
-    uint8_t bufferIndex = 0;
-    bool dataReady = false;
-    bool initialCalibration = true;  // Flag for initial data collection
-    
-    // ----------------------------------
-    // MAIN LOOP
-    // ----------------------------------
-    for (;;)
+    CyDelay(1000);
+
+    // Start Timer for 50Hz sampling
+    Timer_1_Start();
+    ISR_1_StartEx(TimerISR_Handler);
+
+    char buffer[80];
+    uint32_t calculationCount = 0;
+
+    for(;;)
     {
-        MAX30105_check(); // Fill FIFO buffer
-        
-        while (MAX30105_available())
+        if (sampleReady)
         {
+            sampleReady = false;
+
+            // Read exactly one sample from sensor
+            MAX30105_processSample();
+
+            // Get latest sample
             uint32_t red = MAX30105_getFIFORed();
             uint32_t ir  = MAX30105_getFIFOIR();
-            
-            // Store data in buffer for SpO2 calculation
-            redBuffer[bufferIndex] = red;
-            irBuffer[bufferIndex] = ir;
-            bufferIndex++;
-            
-            // Display collection progress every 10 samples (only during initial calibration)
-            if (initialCalibration && bufferIndex % 10 == 0)
-            {
-                clearDisplay();
-                drawString(0, 0, "Collecting data", SSD1306_WHITE);
-                snprintf(buffer, sizeof(buffer), "%d%%", bufferIndex);
-                drawString(0, 12, buffer, SSD1306_WHITE);
-                refreshDisplay();
+
+            // Finger detection
+            if (ir > IR_THRESHOLD) {
+                fingerDetected = true;
+                noFingerCount = 0;
+            } else {
+                noFingerCount++;
+                if (noFingerCount > 10) fingerDetected = false;
             }
-            
-            // Once we have enough samples, calculate SpO2 and HR
+
+            // Store data in circular buffer
+            redBuffer[bufferIndex] = red;
+            irBuffer[bufferIndex]  = ir;
+            bufferIndex++;
+
             if (bufferIndex >= BUFFER_LENGTH)
             {
-                // Calculate heart rate and SpO2
-                maxim_heart_rate_and_oxygen_saturation(
-                    irBuffer, 
-                    BUFFER_LENGTH, 
-                    redBuffer, 
-                    &spo2, 
-                    &spo2Valid, 
-                    &heartRate, 
-                    &hrValid
-                );
-                
-                // Print to UART for debugging
-                snprintf(buffer, sizeof(buffer),
-                        "Raw - HR: %ld (valid: %d), SpO2: %ld (valid: %d)\r\n",
-                        (long)heartRate, hrValid, (long)spo2, spo2Valid);
-                UART_UartPutString(buffer);
-                
-                // Add to history for smoothing (only if valid and reasonable)
-                if (hrValid && heartRate > 40 && heartRate < 180)
-                {
-                    hrHistory[historyIndex] = heartRate;
-                    if (historyCount < HISTORY_SIZE) historyCount++;
-                }
-                else
-                {
-                    // If invalid, copy previous valid value to maintain stability
-                    if (historyCount > 0)
-                    {
-                        uint8_t prevIndex = (historyIndex == 0) ? (HISTORY_SIZE - 1) : (historyIndex - 1);
-                        hrHistory[historyIndex] = hrHistory[prevIndex];
-                    }
-                }
-                
-                if (spo2Valid && spo2 > 85 && spo2 <= 100)
-                {
-                    spo2History[historyIndex] = spo2;
-                    if (historyCount < HISTORY_SIZE) historyCount++;
-                }
-                else
-                {
-                    // If invalid, copy previous valid value to maintain stability
-                    if (historyCount > 0)
-                    {
-                        uint8_t prevIndex = (historyIndex == 0) ? (HISTORY_SIZE - 1) : (historyIndex - 1);
-                        spo2History[historyIndex] = spo2History[prevIndex];
-                    }
-                }
-                
-                historyIndex = (historyIndex + 1) % HISTORY_SIZE;
-                
-                // Reset buffer index and mark data as ready
                 bufferIndex = 0;
-                dataReady = true;
-                initialCalibration = false;  // No more "collecting" screens after first time
+                calculationCount++;
+
+                if (fingerDetected)
+                {
+                    // Calculate HR and SpO2
+                    maxim_heart_rate_and_oxygen_saturation(
+                        irBuffer, BUFFER_LENGTH,
+                        redBuffer,
+                        &spo2, &spo2Valid,
+                        &heartRate, &hrValid
+                    );
+
+                    // Debug UART
+                    snprintf(buffer, sizeof(buffer),
+                        "=== Calc #%lu ===\r\nHR: %ld (valid:%d), SpO2: %ld (valid:%d)\r\n",
+                        (unsigned long)calculationCount,
+                        (long)heartRate, hrValid,
+                        (long)spo2, spo2Valid
+                    );
+                    if (hrValid || spo2Valid) {
+                        UART_UartPutString(buffer);
+                    }
+
+                    // Heart Rate smoothing
+                    if (hrValid && heartRate > 30 && heartRate < 180) {
+                        hrHistory[historyIndex] = heartRate;
+                        if (historyCount < HISTORY_SIZE) historyCount++;
+                    } else if (historyCount > 0) {
+                        uint8_t prevIdx = (historyIndex == 0) ? (HISTORY_SIZE-1) : (historyIndex-1);
+                        hrHistory[historyIndex] = hrHistory[prevIdx];
+                    }
+
+                    // SpO2 smoothing with calibration
+                    if (spo2Valid && spo2 > 70 && spo2 <= 100) {
+                        int32_t correctedSpO2 = spo2 + 4;
+                        if (correctedSpO2 > 100) correctedSpO2 = 100;
+                        spo2History[historyIndex] = correctedSpO2;
+                    } else if (historyCount > 0) {
+                        uint8_t prevIdx = (historyIndex == 0) ? (HISTORY_SIZE-1) : (historyIndex-1);
+                        spo2History[historyIndex] = spo2History[prevIdx];
+                    }
+
+                    historyIndex = (historyIndex + 1) % HISTORY_SIZE;
+
+                    // Calculate display averages
+                    int32_t hrSum = 0, spo2Sum = 0;
+                    uint8_t hrCount = 0, spo2Count = 0;
+                    for (uint8_t i = 0; i < historyCount; i++)
+                    {
+                        if (hrHistory[i] > 30 && hrHistory[i] < 180) { hrSum += hrHistory[i]; hrCount++; }
+                        if (spo2History[i] > 70 && spo2History[i] <= 100) { spo2Sum += spo2History[i]; spo2Count++; }
+                    }
+                    displayHR = (hrCount > 0) ? hrSum / hrCount : 0;
+                    displaySpO2 = (spo2Count > 0) ? spo2Sum / spo2Count : 0;
+                }
             }
-            
-            
-            MAX30105_nextSample();
         }
-        
-        // ----------------------------------
-        // OLED DISPLAY (runs independently of data collection)
-        // ----------------------------------
-        if (dataReady)
+
+        // -------------------- OLED DISPLAY --------------------
+        uint32_t currentIR = MAX30105_getIR();
+        clearDisplay();
+
+        if (!fingerDetected || currentIR < IR_THRESHOLD)
         {
-            char hrStr[20];
-            char spo2Str[20];
-            
-            // Calculate smoothed averages
-            int32_t hrSmoothed = 0;
-            int32_t spo2Smoothed = 0;
-            uint8_t validHrCount = 0;
-            uint8_t validSpo2Count = 0;
-            
-            for (uint8_t i = 0; i < historyCount; i++)
-            {
-                if (hrHistory[i] > 40 && hrHistory[i] < 180)
-                {
-                    hrSmoothed += hrHistory[i];
-                    validHrCount++;
-                }
-                if (spo2History[i] > 85 && spo2History[i] <= 100)
-                {
-                    spo2Smoothed += spo2History[i];
-                    validSpo2Count++;
-                }
-            }
-            
-            if (validHrCount > 0)
-                hrSmoothed /= validHrCount;
-            else
-                hrSmoothed = 0;
-                
-            if (validSpo2Count > 0)
-                spo2Smoothed /= validSpo2Count;
-            else
-                spo2Smoothed = 0;
-            
-            // Get latest IR value for signal quality
-            uint32_t currentIR = MAX30105_getIR();
-            
-            clearDisplay();
             drawString(0, 0, "Heart Monitor", SSD1306_WHITE);
-            
-            // Display Heart Rate (smoothed or current)
-            if (validHrCount > 0 && hrSmoothed > 40 && hrSmoothed < 180)
-            {
-                snprintf(hrStr, sizeof(hrStr), "HR: %ld bpm", (long)hrSmoothed);
-            }
-            else if (hrValid && heartRate > 40 && heartRate < 180)
-            {
-                // Show current reading if no history yet
-                snprintf(hrStr, sizeof(hrStr), "HR: %ld bpm*", (long)heartRate);
-            }
-            else
-            {
-                snprintf(hrStr, sizeof(hrStr), "HR: --");
-            }
-            drawString(0, 12, hrStr, SSD1306_WHITE);
-            
-            // Display SpO2 (smoothed or current)
-            if (validSpo2Count > 0 && spo2Smoothed > 85 && spo2Smoothed <= 100)
-            {
-                snprintf(spo2Str, sizeof(spo2Str), "SpO2: %ld%%", (long)spo2Smoothed);
-            }
-            else if (spo2Valid && spo2 > 85 && spo2 <= 100)
-            {
-                // Show current reading if no history yet
-                snprintf(spo2Str, sizeof(spo2Str), "SpO2: %ld%%*", (long)spo2);
-            }
-            else
-            {
-                snprintf(spo2Str, sizeof(spo2Str), "SpO2: --");
-            }
-            drawString(0, 24, spo2Str, SSD1306_WHITE);
-            
-            // Show signal quality indicator
-            if (currentIR > 50000)
-            {
-                drawString(0, 36, "Signal: Good", SSD1306_WHITE);
-            }
-            else if (currentIR > 20000)
-            {
-                drawString(0, 36, "Signal: OK", SSD1306_WHITE);
-            }
-            else
-            {
-                drawString(0, 36, "Place finger!", SSD1306_WHITE);
-            }
-            
-            // Show data stability indicator
-            if (historyCount >= HISTORY_SIZE)
-            {
-                drawString(0, 48, "Readings stable", SSD1306_WHITE);
-            }
-            else if (historyCount > 0)
-            {
-                snprintf(buffer, sizeof(buffer), "Stabilizing %d/3", historyCount);
-                drawString(0, 48, buffer, SSD1306_WHITE);
-            }
-            else
-            {
-                drawString(0, 48, "Analyzing...", SSD1306_WHITE);
-            }
-            
-            refreshDisplay();
+            drawString(0, 15, "Please place finger", SSD1306_WHITE);
+            drawString(0, 25, "on sensor", SSD1306_WHITE);
         }
-        
-        CyDelay(50);  // Reduced delay for more responsive display updates
+        else
+        {
+            char hrStr[20], spo2Str[20];
+            drawString(0, 0, "Heart Monitor", SSD1306_WHITE);
+
+            // HR display
+            if (displayHR > 30 && displayHR < 180)
+                snprintf(hrStr, sizeof(hrStr), "HR: %ld bpm", (long)displayHR);
+            else
+                snprintf(hrStr, sizeof(hrStr), "HR: --");
+            drawString(0, 12, hrStr, SSD1306_WHITE);
+
+            // SpO2 display
+            if (displaySpO2 > 70 && displaySpO2 <= 100)
+                snprintf(spo2Str, sizeof(spo2Str), "SpO2: %ld%%", (long)displaySpO2);
+            else
+                snprintf(spo2Str, sizeof(spo2Str), "SpO2: --");
+            drawString(0, 24, spo2Str, SSD1306_WHITE);
+
+            // Signal quality
+            if (currentIR > 80000)
+                drawString(0, 40, "Signal: TOO HIGH!", SSD1306_WHITE);
+            else if (currentIR > 50000)
+                drawString(0, 40, "Signal: Good", SSD1306_WHITE);
+            else if (currentIR > 20000)
+                drawString(0, 40, "Signal: OK", SSD1306_WHITE);
+            else
+                drawString(0, 40, "Signal: Weak", SSD1306_WHITE);
+        }
+
+        refreshDisplay();
+        CyDelay(10); // 100 Hz display update limit
     }
 }
+
 
 /* [] END OF FILE */
